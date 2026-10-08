@@ -408,6 +408,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      tulio_home: {
+        Row: {
+          bandcamp_url: string | null;
+          beatport_url: string | null;
+          booking_email: string | null;
+          facebook_url: string | null;
+          instagram_url: string | null;
+          section1_image_alt: string | null;
+          section1_image_url: string | null;
+          singleton_key: string;
+          soundcloud_url: string | null;
+          spotify_url: string | null;
+          tiktok_url: string | null;
+          updated_at: string;
+          x_url: string | null;
+          youtube_url: string | null;
+        };
+        Insert: {
+          bandcamp_url?: string | null;
+          beatport_url?: string | null;
+          booking_email?: string | null;
+          facebook_url?: string | null;
+          instagram_url?: string | null;
+          section1_image_alt?: string | null;
+          section1_image_url?: string | null;
+          singleton_key?: string;
+          soundcloud_url?: string | null;
+          spotify_url?: string | null;
+          tiktok_url?: string | null;
+          updated_at?: string;
+          x_url?: string | null;
+          youtube_url?: string | null;
+        };
+        Update: {
+          bandcamp_url?: string | null;
+          beatport_url?: string | null;
+          booking_email?: string | null;
+          facebook_url?: string | null;
+          instagram_url?: string | null;
+          section1_image_alt?: string | null;
+          section1_image_url?: string | null;
+          singleton_key?: string;
+          soundcloud_url?: string | null;
+          spotify_url?: string | null;
+          tiktok_url?: string | null;
+          updated_at?: string;
+          x_url?: string | null;
+          youtube_url?: string | null;
+        };
+        Relationships: [];
+      };
       tracks: {
         Row: {
           active: boolean;

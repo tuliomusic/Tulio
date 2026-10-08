@@ -12,7 +12,7 @@ import { NocturnaHero } from "@/components/nocturna/NocturnaHero";
 import { SectionWipe } from "@/components/nocturna/SectionTransition";
 import { NocturnaSection } from "@/components/nocturna/NocturnaShell";
 import { SocialBar } from "@/components/jula/SocialBar";
-import { getHomepageMedia, getReleaseSections, getSiteSettings } from "@/lib/public.functions";
+import { getHomepageMedia, getReleaseSections, getSiteSettings, getTulioHome, tulioHomeDefaults } from "@/lib/public.functions";
 import { getNocturnaHomeCopy } from "@/lib/nocturna-home";
 import { useI18n } from "@/lib/i18n";
 import { signalIntroReady } from "@/lib/intro";
@@ -34,15 +34,17 @@ export const Route = createFileRoute("/")({
       bandcamp_url: null,
       booking_email: "soniccdrivebookings@gmail.com",
     };
-    const [settingsResult, mediaResult, sectionsResult] = await Promise.allSettled([
+    const [settingsResult, mediaResult, sectionsResult, homeResult] = await Promise.allSettled([
       getSiteSettings(),
       getHomepageMedia(),
       getReleaseSections(),
+      getTulioHome(),
     ]);
     return {
       settings: settingsResult.status === "fulfilled" ? settingsResult.value : fallbackSettings,
       media: mediaResult.status === "fulfilled" ? mediaResult.value : [],
       sections: sectionsResult.status === "fulfilled" ? sectionsResult.value : [],
+      home: homeResult.status === "fulfilled" ? homeResult.value : tulioHomeDefaults,
     };
   },
   head: () => ({
@@ -81,7 +83,7 @@ function HomeError() {
 function Home() {
   const { locale } = useI18n();
   const nc = getNocturnaHomeCopy(locale);
-  const { settings, media } = Route.useLoaderData();
+  const { settings, media, home } = Route.useLoaderData();
   const photos = media.filter((item) => item.kind === "image");
   const carousel = photos.slice(0, 14);
   const heroImage = carousel[0]?.public_url ?? null;
@@ -102,7 +104,11 @@ function Home() {
 
   return (
     <main className="nc-page bg-black">
-      <TriangleGridSection links={settings} />
+      <TriangleGridSection
+        links={home}
+        imageUrl={home.section1_image_url}
+        imageAlt={home.section1_image_alt}
+      />
 
       <TriangleImageCarousel images={carousel.map((item) => item.public_url ?? "").filter(Boolean)} />
 
@@ -133,7 +139,7 @@ function Home() {
       <SectionWipe />
 
       <NocturnaLogoStrip label={nc.trusted}>
-        <SocialBar links={settings} />
+        <SocialBar links={home} all />
       </NocturnaLogoStrip>
 
       {carousel.length > 1 && (
@@ -150,6 +156,17 @@ function Home() {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {home.booking_email && (
+        <div className="flex h-28 items-center justify-center bg-black px-6 text-center max-md:-mb-28 md:hidden">
+          <a
+            href={`mailto:${home.booking_email}`}
+            className="break-all font-mono text-[11px] uppercase leading-snug tracking-[0.16em] text-white/75"
+          >
+            Bookings · {home.booking_email}
+          </a>
         </div>
       )}
 

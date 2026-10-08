@@ -87,14 +87,18 @@ export function MediaGrid({
   parties = [],
   allowVideos = true,
   downloads = false,
+  phoneGrid = false,
 }: {
   items: MediaItem[];
   parties?: Party[];
   allowVideos?: boolean;
   downloads?: boolean;
+  /** Mobile gallery: iPhone-style tiles, two across, with a one-up option. */
+  phoneGrid?: boolean;
 }) {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<"photos" | "videos">("photos");
+  const [density, setDensity] = useState<1 | 2>(2);
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
@@ -180,6 +184,7 @@ export function MediaGrid({
   const triangleMark =
     "absolute top-3 left-3 z-10 grid size-10 place-items-center border-0 bg-background/80 text-foreground shadow-lg backdrop-blur-md [clip-path:polygon(50%_0,100%_100%,0_100%)] transition-[opacity,background-color] duration-300 focus-visible:opacity-100 focus-visible:outline-none";
 
+  const tile = phoneGrid && density === 2;
   const photoCard = (item: MediaItem, index: number, party: Party) => {
     const selectable = downloads && item.downloadable;
     const isPicked = picked.has(item.id);
@@ -187,12 +192,19 @@ export function MediaGrid({
     return (
       <div
         key={item.id}
-        className="group relative mb-3 break-inside-avoid overflow-hidden bg-card"
+        className={cn(
+          "group relative overflow-hidden bg-black md:mb-3 md:break-inside-avoid md:bg-card",
+          tile ? "max-md:aspect-square" : "mb-3 break-inside-avoid",
+          phoneGrid && density === 1 && "max-md:mb-0 max-md:break-inside-auto",
+        )}
         data-photo-id={item.id}
       >
         <button
           type="button"
-          className="block w-full text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+          className={cn(
+            "block w-full text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring",
+            tile && "max-md:absolute max-md:inset-0",
+          )}
           onClick={() => (selectionMode && selectable ? togglePick(item) : setSelected(item))}
           aria-label={selectionMode && selectable ? t("selectPhoto") : t("openPhoto")}
           aria-pressed={selectionMode && selectable ? isPicked : undefined}
@@ -202,7 +214,8 @@ export function MediaGrid({
             alt={item.alt_text}
             loading={index < 8 ? "eager" : "lazy"}
             className={cn(
-              "w-full transition duration-700 group-hover:scale-[1.03]",
+              "w-full transition duration-700 group-hover:scale-[1.03] md:static md:h-auto",
+              tile && "max-md:absolute max-md:inset-0 max-md:size-full max-md:object-cover",
               selectionMode && selectable && !isPicked && "opacity-70",
             )}
           />
@@ -294,6 +307,39 @@ export function MediaGrid({
             {t("videos")}
           </Button>
         )}
+        {phoneGrid && tab === "photos" && (
+          <div className="ml-auto flex items-center gap-1 md:hidden" role="group" aria-label="Grade">
+            <button
+              type="button"
+              aria-pressed={density === 1}
+              aria-label="Uma foto"
+              onClick={() => setDensity(1)}
+              className={cn(
+                "grid size-8 place-items-center border border-white/25",
+                density === 1 ? "bg-white text-black" : "text-white/70",
+              )}
+            >
+              <span className="block size-3.5 border border-current" />
+            </button>
+            <button
+              type="button"
+              aria-pressed={density === 2}
+              aria-label="Duas fotos"
+              onClick={() => setDensity(2)}
+              className={cn(
+                "grid size-8 place-items-center border border-white/25",
+                density === 2 ? "bg-white text-black" : "text-white/70",
+              )}
+            >
+              <span className="grid grid-cols-2 gap-0.5">
+                <span className="size-1.5 bg-current" />
+                <span className="size-1.5 bg-current" />
+                <span className="size-1.5 bg-current" />
+                <span className="size-1.5 bg-current" />
+              </span>
+            </button>
+          </div>
+        )}
         {tab === "photos" && canSelect && (
           <Button
             variant={selectionMode ? "default" : "outline"}
@@ -320,7 +366,15 @@ export function MediaGrid({
                     : String(group.photos.length).padStart(2, "0")}
                 </p>
               </header>
-              <div className="mt-5 columns-1 gap-3 px-3 sm:columns-2 md:columns-3 lg:columns-4">
+              <div
+                className={cn(
+                  "mt-5 columns-1 gap-3 px-3 sm:columns-2 md:columns-3 lg:columns-4",
+                  phoneGrid &&
+                    "max-md:-mx-5 max-md:mt-0.5 max-md:grid max-md:columns-none max-md:gap-0.5 max-md:px-0",
+                  phoneGrid && density === 2 && "max-md:grid-cols-2",
+                  phoneGrid && density === 1 && "max-md:grid-cols-1",
+                )}
+              >
                 {group.photos.map((item, i) => photoCard(item, i, group.party))}
               </div>
             </section>

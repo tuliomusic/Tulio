@@ -24,6 +24,44 @@ const tulioSettings = {
   booking_email: "soniccdrivebookings@gmail.com",
 };
 
+export const tulioHomeDefaults = {
+  section1_image_url: "/brand/tulio-session.jpg",
+  section1_image_alt: "Tulio no set",
+  booking_email: "soniccdrivebookings@gmail.com",
+  facebook_url: null as string | null,
+  x_url: null as string | null,
+  tiktok_url: null as string | null,
+  youtube_url: null as string | null,
+  soundcloud_url: "https://soundcloud.com/tuliomusic",
+  bandcamp_url: null as string | null,
+  instagram_url: "https://www.instagram.com/tulio.music/",
+  spotify_url: null as string | null,
+  beatport_url: null as string | null,
+};
+
+export const getTulioHome = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { publicSupabase } = await import("@/lib/supabase-public.server");
+    const { data, error } = await publicSupabase()
+      .from("tulio_home")
+      .select(
+        "section1_image_url, section1_image_alt, booking_email, facebook_url, x_url, tiktok_url, youtube_url, soundcloud_url, bandcamp_url, instagram_url, spotify_url, beatport_url",
+      )
+      .eq("singleton_key", "main")
+      .maybeSingle();
+    if (error || !data) return tulioHomeDefaults;
+    return {
+      ...tulioHomeDefaults,
+      ...data,
+      section1_image_url: data.section1_image_url || tulioHomeDefaults.section1_image_url,
+      section1_image_alt: data.section1_image_alt || tulioHomeDefaults.section1_image_alt,
+      booking_email: data.booking_email || tulioHomeDefaults.booking_email,
+    };
+  } catch {
+    return tulioHomeDefaults;
+  }
+});
+
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { publicSupabase } = await import("@/lib/supabase-public.server");

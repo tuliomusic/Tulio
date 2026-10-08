@@ -29,6 +29,7 @@ export const getAdminData = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const [
       settings,
+      home,
       sets,
       liveSets,
       releases,
@@ -39,6 +40,7 @@ export const getAdminData = createServerFn({ method: "GET" })
       releaseSections,
     ] = await Promise.all([
       context.supabase.from("site_settings").select("*").eq("singleton_key", "main").single(),
+      context.supabase.from("tulio_home").select("*").eq("singleton_key", "main").maybeSingle(),
       context.supabase.from("sets").select("*").order("sort_order"),
       context.supabase
         .from("live_sets")
@@ -54,6 +56,7 @@ export const getAdminData = createServerFn({ method: "GET" })
     ]);
     const error =
       settings.error ??
+      home.error ??
       sets.error ??
       liveSets.error ??
       releases.error ??
@@ -65,6 +68,7 @@ export const getAdminData = createServerFn({ method: "GET" })
     if (error) throw error;
     return {
       settings: settings.data,
+      home: home.data,
       sets: sets.data ?? [],
       live_sets: liveSets.data ?? [],
       releases: releases.data ?? [],
@@ -122,6 +126,50 @@ export const saveSocialLinks = createServerFn({ method: "POST" })
     );
     const { error } = await context.supabase
       .from("site_settings")
+      .update({ ...clean, updated_at: new Date().toISOString() })
+      .eq("singleton_key", "main");
+    if (error) throw error;
+    return { ok: true };
+  });
+
+const homeUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((v) => v === "" || /^https?:\/\//i.test(v), "Link inválido.");
+const homeImage = z
+  .string()
+  .trim()
+  .max(800)
+  .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//i.test(v), "Imagem inválida.");
+
+export const saveTulioHome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        section1_image_url: homeImage,
+        section1_image_alt: z.string().trim().max(180),
+        booking_email: z.string().trim().max(180),
+        facebook_url: homeUrl,
+        x_url: homeUrl,
+        tiktok_url: homeUrl,
+        youtube_url: homeUrl,
+        soundcloud_url: homeUrl,
+        bandcamp_url: homeUrl,
+        instagram_url: homeUrl,
+        spotify_url: homeUrl,
+        beatport_url: homeUrl,
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const clean = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key, value === "" ? null : value]),
+    );
+    const { error } = await context.supabase
+      .from("tulio_home")
       .update({ ...clean, updated_at: new Date().toISOString() })
       .eq("singleton_key", "main");
     if (error) throw error;

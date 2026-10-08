@@ -14,11 +14,12 @@ import {
   getAdminData,
   saveAdminItem,
   saveSettings,
-  saveSocialLinks,
+  saveTulioHome,
   setPanelPassword,
   setPresskitPassword,
 } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadSiteMediaFile } from "@/lib/storage-upload";
 import { LinkSetEditor } from "@/components/jula/admin/LinkSetEditor";
 import { UpcomingDatesAdmin } from "@/components/jula/admin/UpcomingDatesAdmin";
 import { MediaLibrary } from "@/components/jula/admin/MediaLibrary";
@@ -44,7 +45,7 @@ function Admin() {
   const save = useServerFn(saveAdminItem);
   const remove = useServerFn(deleteAdminItem);
   const saveSite = useServerFn(saveSettings);
-  const saveSocial = useServerFn(saveSocialLinks);
+  const saveHome = useServerFn(saveTulioHome);
   const query = useQueryClient();
   const nav = useNavigate();
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-content"], queryFn: fn });
@@ -54,13 +55,22 @@ function Admin() {
   const [playerShuffle, setPlayerShuffle] = useState(false);
   const [setsShuffle, setSetsShuffle] = useState(false);
   const [party, setParty] = useState({ name: "", happened_at: "" });
-  const [social, setSocial] = useState({
-    instagram_url: "",
-    soundcloud_url: "",
-    spotify_url: "",
+  const emptyHome = {
+    section1_image_url: "/brand/tulio-session.jpg",
+    section1_image_alt: "Tulio no set",
+    booking_email: "soniccdrivebookings@gmail.com",
+    facebook_url: "",
+    x_url: "",
+    tiktok_url: "",
     youtube_url: "",
+    soundcloud_url: "",
     bandcamp_url: "",
-  });
+    instagram_url: "",
+    spotify_url: "",
+    beatport_url: "",
+  };
+  const [home, setHome] = useState(emptyHome);
+  const [homeUploading, setHomeUploading] = useState(false);
   const savePass = useServerFn(setPresskitPassword);
   const savePanel = useServerFn(setPanelPassword);
   const [presskitPass, setPresskitPass] = useState("");
@@ -69,18 +79,28 @@ function Admin() {
   const [panelPass2, setPanelPass2] = useState("");
   useEffect(() => {
     if (data?.settings) {
-      setSocial({
-        instagram_url: data.settings.instagram_url ?? "",
-        soundcloud_url: data.settings.soundcloud_url ?? "",
-        spotify_url: data.settings.spotify_url ?? "",
-        youtube_url: data.settings.youtube_url ?? "",
-        bandcamp_url: data.settings.bandcamp_url ?? "",
-      });
       setReleaseTitle(data.settings.release_title);
       setReleaseBody(data.settings.release_body);
       setPlayerEnabled(data.settings.player_enabled);
       setPlayerShuffle(data.settings.player_shuffle);
       setSetsShuffle(data.settings.sets_shuffle ?? false);
+    }
+    if (data?.home) {
+      const row = data.home;
+      setHome({
+        section1_image_url: row.section1_image_url ?? "",
+        section1_image_alt: row.section1_image_alt ?? "",
+        booking_email: row.booking_email ?? "",
+        facebook_url: row.facebook_url ?? "",
+        x_url: row.x_url ?? "",
+        tiktok_url: row.tiktok_url ?? "",
+        youtube_url: row.youtube_url ?? "",
+        soundcloud_url: row.soundcloud_url ?? "",
+        bandcamp_url: row.bandcamp_url ?? "",
+        instagram_url: row.instagram_url ?? "",
+        spotify_url: row.spotify_url ?? "",
+        beatport_url: row.beatport_url ?? "",
+      });
     }
   }, [data]);
   async function refresh() {
@@ -185,7 +205,7 @@ function Admin() {
           <TabsTrigger value="tracks">Player</TabsTrigger>
           <TabsTrigger value="release">Release</TabsTrigger>
           <TabsTrigger value="media">Mídia</TabsTrigger>
-          <TabsTrigger value="redes">Redes</TabsTrigger>
+          <TabsTrigger value="redes">Sessão 1</TabsTrigger>
           <TabsTrigger value="acesso">Acesso</TabsTrigger>
           <TabsTrigger value="parties">Festas</TabsTrigger>
           <TabsTrigger value="datas">Próximas datas</TabsTrigger>
@@ -273,19 +293,73 @@ function Admin() {
           <MediaLibrary media={data.media} parties={data.parties} onChanged={refresh} />
         </TabsContent>
         <TabsContent value="redes">
-          <Panel title="Links das redes">
+          <Panel title="Sessão 1">
             <p className="-mt-3 mb-5 text-sm text-muted-foreground">
-              Os ícones aparecem na abertura na ordem Instagram, SoundCloud, Spotify, YouTube e
-              Bandcamp. Deixe em branco para esconder.
+              A foto da direita, o texto dela e os links dos ícones da abertura. No celular, o
+              e-mail de bookings fica na faixa preta abaixo do carrossel.
             </p>
-            <div className="space-y-3">
+            {home.section1_image_url && (
+              <img
+                src={home.section1_image_url}
+                alt=""
+                className="mb-4 aspect-[4/5] w-40 object-cover"
+              />
+            )}
+            <label className="block text-xs uppercase tracking-[.15em] text-muted-foreground">
+              Foto da sessão 1
+              <Input
+                className="mt-1"
+                type="file"
+                accept="image/*"
+                disabled={homeUploading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  setHomeUploading(true);
+                  try {
+                    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+                    const path = `home/section1-${Date.now()}.${ext}`;
+                    await uploadSiteMediaFile(file, path);
+                    const url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl;
+                    setHome((v) => ({ ...v, section1_image_url: url }));
+                    toast.success("Foto enviada. Salve para publicar.");
+                  } catch {
+                    toast.error("Não foi possível enviar a foto.");
+                  } finally {
+                    setHomeUploading(false);
+                  }
+                }}
+              />
+            </label>
+            <label className="mt-3 block text-xs uppercase tracking-[.15em] text-muted-foreground">
+              Texto da foto
+              <Input
+                className="mt-1"
+                value={home.section1_image_alt}
+                onChange={(e) => setHome((v) => ({ ...v, section1_image_alt: e.target.value }))}
+              />
+            </label>
+            <label className="mt-3 block text-xs uppercase tracking-[.15em] text-muted-foreground">
+              E-mail de bookings
+              <Input
+                className="mt-1"
+                value={home.booking_email}
+                onChange={(e) => setHome((v) => ({ ...v, booking_email: e.target.value }))}
+              />
+            </label>
+            <div className="mt-6 space-y-3">
               {(
                 [
-                  ["instagram_url", "Instagram"],
-                  ["soundcloud_url", "SoundCloud"],
-                  ["spotify_url", "Spotify"],
+                  ["facebook_url", "Facebook"],
+                  ["x_url", "X"],
+                  ["tiktok_url", "TikTok"],
                   ["youtube_url", "YouTube"],
+                  ["soundcloud_url", "SoundCloud"],
                   ["bandcamp_url", "Bandcamp"],
+                  ["instagram_url", "Instagram"],
+                  ["spotify_url", "Spotify"],
+                  ["beatport_url", "Beatport"],
                 ] as const
               ).map(([key, label]) => (
                 <label
@@ -296,25 +370,26 @@ function Admin() {
                   <Input
                     className="mt-1"
                     placeholder="https://"
-                    value={social[key]}
-                    onChange={(e) => setSocial((v) => ({ ...v, [key]: e.target.value }))}
+                    value={home[key]}
+                    onChange={(e) => setHome((v) => ({ ...v, [key]: e.target.value }))}
                   />
                 </label>
               ))}
             </div>
             <Button
               className="mt-6"
+              disabled={homeUploading}
               onClick={async () => {
                 try {
-                  await saveSocial({ data: social });
+                  await saveHome({ data: home });
                   await refresh();
-                  toast.success("Links atualizados.");
+                  toast.success("Sessão 1 atualizada.");
                 } catch {
-                  toast.error("Verifique os links (use https://).");
+                  toast.error("Verifique a foto, o texto e os links (use https://).");
                 }
               }}
             >
-              <Save /> Salvar links
+              <Save /> Salvar sessão 1
             </Button>
           </Panel>
         </TabsContent>

@@ -1,53 +1,85 @@
-import instagram from "@/assets/social/instagram.png.asset.json";
-import soundcloud from "@/assets/social/soundcloud.png.asset.json";
-import spotify from "@/assets/social/spotify.png.asset.json";
-import youtube from "@/assets/social/youtube.png.asset.json";
-import bandcamp from "@/assets/social/bandcamp.png.asset.json";
-
 export type SocialUrls = {
-  instagram_url?: string | null;
-  soundcloud_url?: string | null;
-  spotify_url?: string | null;
+  facebook_url?: string | null;
+  x_url?: string | null;
+  tiktok_url?: string | null;
   youtube_url?: string | null;
+  soundcloud_url?: string | null;
   bandcamp_url?: string | null;
+  instagram_url?: string | null;
+  spotify_url?: string | null;
+  beatport_url?: string | null;
   booking_email?: string | null;
 };
 
-const order = [
-  { key: "instagram_url", label: "Instagram", icon: instagram.url },
-  { key: "soundcloud_url", label: "SoundCloud", icon: soundcloud.url },
-  { key: "spotify_url", label: "Spotify", icon: spotify.url },
-  { key: "youtube_url", label: "YouTube", icon: youtube.url },
-  { key: "bandcamp_url", label: "Bandcamp", icon: bandcamp.url },
+const platforms = [
+  { key: "facebook_url", label: "Facebook", icon: "/brand/social/facebook.png" },
+  { key: "x_url", label: "X", icon: "/brand/social/x.png" },
+  { key: "tiktok_url", label: "TikTok", icon: "/brand/social/tiktok.png" },
+  { key: "youtube_url", label: "YouTube", icon: "/brand/social/youtube.png" },
+  { key: "soundcloud_url", label: "SoundCloud", icon: "/brand/social/soundcloud.png" },
+  { key: "bandcamp_url", label: "Bandcamp", icon: "/brand/social/bandcamp.png" },
+  { key: "instagram_url", label: "Instagram", icon: "/brand/social/instagram.png" },
+  { key: "spotify_url", label: "Spotify", icon: "/brand/social/spotify.png" },
+  { key: "beatport_url", label: "Beatport", icon: "/brand/social/beatport.png" },
 ] as const;
 
-export function SocialBar({ links }: { links: SocialUrls }) {
-  const items = order.filter(item => (links[item.key] ?? "").trim().length > 0);
+const iconClass =
+  "grid size-11 shrink-0 place-items-center transition-transform duration-300 hover:-translate-y-1";
+
+export function SocialBar({ links, all = false }: { links: SocialUrls; all?: boolean }) {
+  const items = all
+    ? platforms
+    : platforms.filter((item) => (links[item.key] ?? "").trim().length > 0);
   const email = (links.booking_email ?? "").trim();
   if (!items.length && !email) return null;
   return (
-    <div className="pointer-events-auto flex flex-col items-center gap-3">
+    <div className="pointer-events-auto flex w-full flex-col items-center gap-3">
       {email && (
         <a
           href={`mailto:${email}`}
-          className="max-w-full break-all px-4 text-center font-mono text-[10px] uppercase tracking-[.16em] text-white/70 transition-colors hover:text-white"
+          className="hidden max-w-full break-all px-4 text-center font-mono text-[10px] uppercase tracking-[.16em] text-white/70 transition-colors hover:text-white md:block"
         >
           Bookings · {email}
         </a>
       )}
-      <div className="flex items-center justify-center gap-7">
-      {items.map(item => (
-        <a
-          key={item.key}
-          href={links[item.key] as string}
-          target="_blank"
-          rel="noreferrer noopener"
-          aria-label={item.label}
-          className="grid size-10 place-items-center opacity-50 grayscale transition-all duration-300 hover:-translate-y-1 hover:opacity-100 hover:grayscale-0"
-        >
-          <img src={item.icon} alt={item.label} className="size-8 object-contain" loading="lazy" />
-        </a>
-      ))}
+      <div
+        className={
+          all
+            ? "grid w-full grid-cols-5 justify-items-center gap-y-6 md:flex md:flex-wrap md:justify-center md:gap-5"
+            : "flex flex-wrap items-center justify-center gap-x-3 gap-y-2 md:gap-x-4"
+        }
+      >
+        {items.map((item) => {
+          const href = (links[item.key] ?? "").trim();
+          const image = (
+            <img
+              src={item.icon}
+              alt=""
+              className="size-9 object-contain brightness-0 invert"
+              loading="lazy"
+            />
+          );
+          if (!href) {
+            return (
+              <span key={item.key} className={iconClass} aria-label={item.label} title={item.label}>
+                {image}
+              </span>
+            );
+          }
+          return (
+            <a
+              key={item.key}
+              href={href}
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label={item.label}
+              title={item.label}
+              className={iconClass}
+            >
+              {image}
+            </a>
+          );
+        })}
       </div>
     </div>
   );
