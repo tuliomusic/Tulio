@@ -205,7 +205,7 @@ export function SiteHeader() {
             aria-modal="true"
             aria-label="Menu"
             ref={overlayRef}
-            className="fixed inset-0 z-[65] flex flex-col bg-black/55 text-white backdrop-blur-2xl md:bg-transparent md:backdrop-blur-none"
+            className="fixed inset-0 z-[80] flex flex-col bg-black/55 text-white backdrop-blur-2xl md:bg-transparent md:backdrop-blur-none"
             style={{ clipPath: `circle(150% at ${origin})` }}
           >
             <nav className="flex flex-1 flex-col justify-center overflow-y-auto px-6 pt-28 pb-8 md:px-16 md:pb-10">

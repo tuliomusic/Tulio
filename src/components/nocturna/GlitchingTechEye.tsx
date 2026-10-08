@@ -319,7 +319,7 @@ export function GlitchingTechEye({
       }}
     >
       <style>{"@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');"}</style>
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
       <canvas
         ref={grainCanvasRef}
         aria-hidden
