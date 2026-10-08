@@ -32,6 +32,45 @@ const localeTags: Record<Locale, string> = {
   de: "de-DE",
   nl: "nl-NL",
 };
+function VideoWall({ videos, downloads }: { videos: MediaItem[]; downloads: boolean }) {
+  const { t } = useI18n();
+  if (videos.length === 0) return null;
+  return (
+    <section id="galeria-videos">
+      <header className="flex items-baseline justify-between border-b border-border/60 px-5 pb-3 md:px-10">
+        <h2 className="text-2xl uppercase md:text-4xl">
+          <SwapText>{t("videos")}</SwapText>
+        </h2>
+        <p className="font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">
+          {String(videos.length).padStart(2, "0")}
+        </p>
+      </header>
+      <div className="mt-5 grid gap-3 px-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {videos.map((v) => (
+          <div key={v.id}>
+            <video
+              src={v.public_url ?? ""}
+              poster={v.poster_url ?? undefined}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-[9/16] w-full bg-card object-cover"
+              aria-label={v.title}
+            />
+            {downloads && v.downloadable && (
+              <Button asChild variant="outline" className="mt-2 w-full">
+                <a href={v.public_url ?? ""} download>
+                  {t("downloadVideo")}
+                </a>
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function formatDate(value: string | null, locale: Locale) {
   if (!value) return "";
   const date = new Date(`${value}T00:00:00`);
@@ -138,6 +177,8 @@ export function MediaGrid({
 
   const iconButton =
     "absolute top-3 z-10 grid size-9 place-items-center rounded-full border border-border/70 bg-background/70 text-foreground shadow-lg backdrop-blur-md transition-[opacity,background-color,border-color] duration-300 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+  const triangleMark =
+    "absolute top-3 left-3 z-10 grid size-10 place-items-center border-0 bg-background/80 text-foreground shadow-lg backdrop-blur-md [clip-path:polygon(50%_0,100%_100%,0_100%)] transition-[opacity,background-color] duration-300 focus-visible:opacity-100 focus-visible:outline-none";
 
   const photoCard = (item: MediaItem, index: number, party: Party) => {
     const selectable = downloads && item.downloadable;
@@ -190,9 +231,8 @@ export function MediaGrid({
               togglePick(item);
             }}
             className={cn(
-              iconButton,
-              "left-3",
-              isPicked && "border-primary bg-primary text-primary-foreground",
+              triangleMark,
+              isPicked && "bg-primary text-primary-foreground",
               // Desktop: reveal on hover. Touch: only shown in selection mode
               // (entered through the "Select" toggle).
               selectionMode || isPicked
@@ -200,7 +240,7 @@ export function MediaGrid({
                 : "opacity-0 pointer-coarse:hidden pointer-fine:group-hover:opacity-100",
             )}
           >
-            <Check className={cn("size-4", !isPicked && "opacity-40")} />
+            <Check className={cn("mt-1.5 size-3.5", !isPicked && "opacity-40")} />
           </button>
         )}
         {selectable && !selectionMode && (
@@ -285,30 +325,10 @@ export function MediaGrid({
               </div>
             </section>
           ))}
+          {videos.length > 0 && <VideoWall videos={videos} downloads={downloads} />}
         </div>
       ) : (
-        <div className="grid gap-3 px-3 md:grid-cols-2 lg:grid-cols-3">
-          {videos.map((v) => (
-            <div key={v.id}>
-              <video
-                src={v.public_url ?? ""}
-                poster={v.poster_url ?? undefined}
-                controls
-                playsInline
-                preload="metadata"
-                className="aspect-[9/16] w-full bg-card object-cover"
-                aria-label={v.title}
-              />
-              {downloads && v.downloadable && (
-                <Button asChild variant="outline" className="mt-2 w-full">
-                  <a href={v.public_url ?? ""} download>
-                    {t("downloadVideo")}
-                  </a>
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
+        <VideoWall videos={videos} downloads={downloads} />
       )}
       {selected && (
         <PhotoLightbox

@@ -52,6 +52,7 @@ export type PresskitMedia = {
   alt_text: string;
   downloadable: boolean;
   presskit_enabled: boolean;
+  party_id?: string | null;
 };
 
 export type PresskitContent =
@@ -74,6 +75,7 @@ const STUDIO_PHOTOS: PresskitMedia[] = [
     alt_text: "Tulio em estúdio",
     downloadable: true,
     presskit_enabled: true,
+    party_id: "studio",
   },
   {
     id: "studio-dsc7467",
@@ -84,8 +86,23 @@ const STUDIO_PHOTOS: PresskitMedia[] = [
     alt_text: "Tulio em estúdio",
     downloadable: true,
     presskit_enabled: true,
+    party_id: "studio",
   },
 ];
+
+const PRESSKIT_VIDEOS: PresskitMedia[] = Array.from({ length: 9 }, (_, index) => {
+  const n = String(index + 1).padStart(2, "0");
+  return {
+    id: `tulio-${n}`,
+    kind: "video" as const,
+    title: `Tulio ${n}`,
+    public_url: `/videos/tulio-${n}.mp4`,
+    poster_url: `/videos/posters/tulio-${n}.webp`,
+    alt_text: `Tulio — vídeo ${n}`,
+    downloadable: true,
+    presskit_enabled: true,
+  };
+});
 
 const TECHNICAL_RIDER: string[][] = [
   ["03 CDJ 3000", "CDJ 2000 NEXUS 2"],
@@ -101,7 +118,7 @@ export const getPresskitContent = createServerFn({ method: "GET" }).handler(
   async (): Promise<PresskitContent> => {
     noStore();
     if (!(await hasPresskitAccess())) return { unlocked: false };
-    return { unlocked: true, media: STUDIO_PHOTOS, rider: TECHNICAL_RIDER };
+    return { unlocked: true, media: [...STUDIO_PHOTOS, ...PRESSKIT_VIDEOS], rider: TECHNICAL_RIDER };
   },
 );
 

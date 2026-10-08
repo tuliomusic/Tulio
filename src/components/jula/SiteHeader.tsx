@@ -130,8 +130,8 @@ export function SiteHeader() {
           }}
         >
           <div className="flex w-full items-center justify-between gap-3">
-            <Link to="/" aria-label="Tulio — início" className="inline-flex shrink-0 items-center text-[18px] no-underline md:text-[13px]">
-              <TulioWordmark className="text-[18px] md:text-[13px]" />
+            <Link to="/" aria-label="Tulio — início" className="inline-flex shrink-0 items-center no-underline">
+              <TulioWordmark className="text-[20px] md:text-[18px]" />
             </Link>
             <div className="flex shrink-0 items-center gap-3 md:gap-5">
               <LanguageSelector />

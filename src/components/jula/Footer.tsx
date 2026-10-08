@@ -10,7 +10,15 @@ export function Footer() {
         <Link to="/" className="inline-block text-white transition-opacity hover:opacity-75">
           <TulioWordmark className="text-[clamp(3.25rem,7vw,6rem)]" />
         </Link>
-        <p className="mt-4 font-mono text-xs tracking-[0.18em] text-white/70">{new Date().getFullYear()}</p>
+        <div className="mt-4 flex items-center justify-between gap-4">
+          <p className="font-mono text-xs tracking-[0.18em] text-white/70">{new Date().getFullYear()}</p>
+          <Link
+            to="/auth"
+            className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/45 transition-colors hover:text-white"
+          >
+            ADM
+          </Link>
+        </div>
       </div>
     </footer>
   );

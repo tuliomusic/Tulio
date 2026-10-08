@@ -10,7 +10,7 @@ type CarouselProps = {
 const IMAGE_SIZE = 86;
 const THUMBNAIL_SIZE = 10;
 const SPACING = 14;
-const FOCUS_WIDTH = 175;
+const FOCUS_WIDTH = 248;
 const SCATTER = 145;
 const CENTER_X = 50;
 const CENTER_Y = 50;
@@ -231,9 +231,12 @@ export function TriangleImageCarousel({ images, className = "" }: CarouselProps)
       width = nextW;
       height = nextH;
       const narrow = width < 760;
-      scale = narrow
-        ? Math.max(0.9, Math.min(width / 330, height / 430))
-        : Math.max(0.1, Math.min(width / 702, height / 342));
+      // Full zoom fills the pinned viewport: height of the straight triangle, width of its base.
+      const spine = SCATTER * 1.92;
+      const baseWidth = FOCUS_WIDTH * 1.56;
+      const fitH = (height * (narrow ? 0.78 : 0.92)) / spine;
+      const fitW = (width * (narrow ? 0.96 : 0.9)) / baseWidth;
+      scale = Math.max(narrow ? 0.95 : 1.2, Math.min(fitH, fitW));
       gap = Math.max(SPACING * scale, width / 220, 1);
       const ratio = previous || 1;
       scroll *= scale / ratio;

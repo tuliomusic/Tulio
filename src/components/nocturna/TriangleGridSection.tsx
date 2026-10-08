@@ -19,10 +19,12 @@ export function TriangleGridSection({ links }: { links: SocialUrls }) {
             className="absolute inset-0 h-full w-full"
           />
           <div
-            className="absolute bottom-6 left-6 z-20 transition-opacity duration-500 md:bottom-8 md:left-8"
-            style={{ opacity: menuOpen ? 0 : 1, pointerEvents: menuOpen ? "none" : "auto" }}
+            className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6 transition-opacity duration-500 md:bottom-8"
+            style={{ opacity: menuOpen ? 0 : 1 }}
           >
-            <SocialBar links={links} />
+            <div className={menuOpen ? "pointer-events-none" : "pointer-events-auto"}>
+              <SocialBar links={links} />
+            </div>
           </div>
         </div>
         <ImageGlitch src="/brand/tulio-session.jpg" alt="Tulio no set" />

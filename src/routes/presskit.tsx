@@ -182,7 +182,11 @@ function Presskit() {
           </p>
         </div>
         {content ? (
-          <MediaGrid items={content.media} downloads />
+          <MediaGrid
+            items={content.media}
+            parties={[{ id: "studio", name: "Estúdio", happened_at: null }]}
+            downloads
+          />
         ) : contentError ? (
           <div className="mx-5 border border-border bg-card p-7 md:mx-10">
             <p className="text-sm text-muted-foreground">{t("materialsError")}</p>

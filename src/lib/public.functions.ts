@@ -6,9 +6,12 @@ type Tables = Database["public"]["Tables"];
 
 const tulioSettings = {
   artist_name: "Tulio",
-  release_title: "Techno, glitch e metal.",
-  release_body:
-    "Tulio é um DJ de São Paulo. O set é techno, seco e noturno, com cortes glitch e uma marca construída em triângulos e no número 7.",
+  release_title: "Release",
+  release_body: [
+    "Túlio atua conectado à cultura underground, construindo experiências através de seus sets. Suas apresentações são desenvolvidas de forma progressiva, explorando tensão, atmosfera, groove e dinâmica para criar uma conexão contínua com a pista. Cada set é construído como uma narrativa, em que seleção musical, sensibilidade e leitura de pista conduzem a experiência do início ao fim.",
+    "Sua identidade sonora tem o House como principal ponto de partida, mas se expande por diferentes vertentes e referências da música eletrônica. Essa amplitude faz parte de sua pesquisa musical e aparece de maneira fluida em seus sets, onde diferentes sonoridades, texturas e influências se encontram sem perder coerência. Mais do que se limitar a um gênero específico, sua seleção é guiada pela narrativa, pela energia e pelo momento da pista.",
+    "Ao longo de sua trajetória, apresentou-se em diferentes cenários da música eletrônica brasileira, incluindo a pista Sinkrö do Festival Universo Paralello e o D-Edge, em São Paulo, além de performances em Fernando de Noronha e Jericoacoara.",
+  ].join("\n\n"),
   logo_url: null,
   player_enabled: false,
   player_shuffle: false,
