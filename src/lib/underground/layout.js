@@ -40,7 +40,6 @@ export const WAREHOUSE = {
 
 // Model files + real-world size normalization.
 export const MODELS = {
-  top: { url: 'models/funktion-one-res2.glb', height: 1.1 },       // Funktion One Res 2 top
   sub: { url: 'models/cerwin-vega-speaker.glb', height: 0.95, tint: 0.3 }, // Cerwin-Vega folded-horn bass bin; tint darkens its light-grey carpet
   // Contains 2x CDJ-3000 + DJM-A9 mixer + cables. Native unit ≈ 7.33 m per meter;
   // 0.1365 makes one CDJ 0.33 m wide x 0.45 m deep (real CDJ-3000: 329 x 453 mm).
@@ -63,13 +62,16 @@ export const BOOTH = {
     position: [0, 0.6, -17.76], rotY: 0,
     scale: 1,            // real-world size already; `height` (m) would normalize instead
     keepOrigin: true,    // don't recentre on the bounding box (the arms reach forward)
-    // Look from the reference photo: black tee, no chain. Material name → colour multiplier; mesh names hidden.
-    materialTint: { DJ_Clothes: 0x202020 },
-    hideMeshes: ['Chain1'],
+    // Tulio (modelled from his reference photo): black tee, dark pants, cord necklace with a silver bar, black smartwatch.
+    // Colours are baked into the model. Optional: material name → colour multiplier; mesh names hidden.
+    materialTint: {},
+    hideMeshes: [],
     // Baked clip (DJ_Dance_128BPM, 16 beats) is locked to the scene beat clock (MUSIC.bpm):
-    // jog/EQ/fader moves, bounce + head nod on every kick, right-fist pump to the crowd on clip beats 11-15.
+    // one hand rides the mixer (EQ / filter / fader) while the other works the CDJ jog + pitch,
+    // knee bounce + hip sway and a head nod on every kick (IK-baked, seamless 16-beat loop).
     clipName: 'DJ_Dance_128BPM', clipBpm: 128, clipBeats: 16,
-    // Right-arm fist pump (clip beats 11-15). 1 = as baked, 0 = right arm + head replay beats 3-7 instead.
+    // Legacy fist-pump switch (the current clip has no fist pump): 1 = play the clip as baked,
+    // 0 = right arm + head replay clip beats 3-7 over beats 11-15.
     fistPump: 1,
     headPitch: 0,       // rad added to the baked head pose (+ = look down)
     // Fallbacks (placeholder silhouette / glb without clip): procedural animation, see djRig.js
@@ -82,35 +84,54 @@ export const BOOTH = {
   deskLamp: { position: [0, 1.9, -17.0], intensity: 0.25 }, // soft warm light so the gear reads
 };
 
-// Sub layouts. Switch SUB_LAYOUT to 'row' for a straight row of 6 in front of the booth.
-//  'stacks': 2 subs stacked under each Funktion One top (tops sit on them) + 2 in front of the booth.
-export const SUB_LAYOUT = 'stacks';
+// Sub layouts. 'front': 10 subs laid on their side (wide), one continuous row along the front of the riser
+// (5 per side of the centre line). 'row' = the old straight row of 6 upright.
+// Sub fields: x/z = centre of the footprint, rotY, level (0 = floor, 1 = stacked), lay: true = on its side.
+export const SUB_LAYOUT = 'front';
 
-const STACK_X = 3.5, STACK_Z = -17.0, TOE_IN = 0.15;
+const SUB_W = 0.97; // sub width when laid on its side (model is 0.95 m tall upright) + a small gap
+const FRONT_COUNT = 10; // subs in the front row
 export const SUB_LAYOUTS = {
-  stacks: {
-    subs: [
-      { x: -STACK_X, z: STACK_Z, rotY: TOE_IN, level: 0 },
-      { x: -STACK_X, z: STACK_Z, rotY: TOE_IN, level: 1 },
-      { x: STACK_X, z: STACK_Z, rotY: -TOE_IN, level: 0 },
-      { x: STACK_X, z: STACK_Z, rotY: -TOE_IN, level: 1 },
-      { x: -0.42, z: -16.05, rotY: 0, level: 0 },
-      { x: 0.42, z: -16.05, rotY: 0, level: 0 },
-    ],
-    // onSubs: number of subs under the top (elevation = onSubs * sub height). frontAlign: flush with sub front.
-    tops: [
-      { x: -STACK_X, z: STACK_Z, rotY: TOE_IN, onSubs: 2, frontAlign: true },
-      { x: STACK_X, z: STACK_Z, rotY: -TOE_IN, onSubs: 2, frontAlign: true },
-    ],
+  front: {
+    subs: Array.from({ length: FRONT_COUNT }, (_, i) => ({
+      x: (i - (FRONT_COUNT - 1) / 2) * SUB_W, z: -16.16, rotY: 0, level: 0, lay: true,
+    })),
+    tops: [],
   },
   row: {
     subs: [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5].map((i) => ({ x: i * 0.82, z: -15.9, rotY: 0, level: 0 })),
-    // no subs underneath → tops go on a simple black plinth of standHeight
-    tops: [
-      { x: -STACK_X, z: STACK_Z, rotY: TOE_IN, standHeight: 1.4 },
-      { x: STACK_X, z: STACK_Z, rotY: -TOE_IN, standHeight: 1.4 },
-    ],
+    tops: [],
   },
+};
+
+// DJ monitors (monitors.js, procedural): one stack per side of the booth on the riser, aimed at the DJ's head.
+// Each = compact sub on the riser floor + black pole from its top centre + 2 compact line-array cells
+// (same wedge cabinet as the flown hangs, smaller) with a slight downward J-curve and a small red badge.
+export const MONITORS = {
+  enabled: true,
+  positions: [[-1.32, -17.42], [1.32, -17.42]], // [x, z] on the riser (riser top y = 0.6)
+  aimAt: [0, 2.3, -17.76],                     // DJ's head; each stack yaws + the cells pitch towards it
+  sub: { w: 0.52, h: 0.62, d: 0.58 },
+  poleLength: 0.78,                            // from the sub top to the cell yoke
+  cell: { w: 0.5, h: 0.155, d: 0.34, backH: 0.115 },
+  splayDeg: 4,                                 // angle between the two cells
+};
+
+// Flown line arrays (procedural, lineArray.js): one hang per side, above the outer front subs,
+// hung from the ceiling on two chain hoists. Cabinet = wedge box (front height h, back height backH, depth d).
+// splayDeg = inter-cabinet angles from the top down (J-curve aimed at the dance floor); rotY toes each hang in.
+export const LINE_ARRAY = {
+  enabled: true,
+  count: 6,
+  box: { w: 0.92, h: 0.27, d: 0.56, backH: 0.2 },
+  gap: 0.008,
+  splayDeg: [1.5, 3, 4.5, 6, 7],
+  topY: 4.3,         // fly bar height (inner ceiling ≈ 4.85 m)
+  ceilingY: 4.85,    // hoist chains run up to here
+  hangs: [
+    { x: -4.25, z: -16.45, rotY: 0.2, tilt: 1 },
+    { x: 4.25, z: -16.45, rotY: -0.2, tilt: 1 },
+  ],
 };
 
 // Lighting truss hanging over the dance floor (rectangle, box-truss section).
@@ -120,9 +141,9 @@ export const LIGHT_TRUSS = {
     [-4.5, -14.5], [-1.5, -14.5], [1.5, -14.5], [4.5, -14.5],
     [-6, -8], [6, -8],
   ],
-  washes: [ // red / amber washes aimed at the booth + stacks
-    { pos: [-3, -14.5], target: [-3.5, 1.5, -17], color: 0xff1a00 },
-    { pos: [3, -14.5], target: [3.5, 1.5, -17], color: 0xff1a00 },
+  washes: [ // red / amber washes aimed at the booth sides (monitors, subs, line arrays)
+    { pos: [-3, -14.5], target: [-3, 1.3, -17], color: 0xff1a00 },
+    { pos: [3, -14.5], target: [3, 1.3, -17], color: 0xff1a00 },
     { pos: [0, -14.5], target: [0, 0.2, -15.6], color: 0xff6a00, angle: 0.3 }, // aimed low: riser front + front subs, DJ only gets the edge
   ],
   strobes: [[-3, -3.5], [3, -3.5], [0, -14.5]],
@@ -152,7 +173,8 @@ export const CAMERA = {
     wide: { pos: [3.5, 4.6, -2.0], target: [-0.3, 1.5, -17] },
     booth: { pos: [0.85, 2.2, -15.1], target: [0, 1.72, -17.5] },
     mid: { pos: [1.0, 1.75, -11.8], target: [0, 1.95, -17.4], fov: 42 },
-    stacks: { pos: [-0.8, 1.9, -12.2], target: [-3.6, 1.7, -16.9], fov: 45 },
+    stacks: { pos: [-0.8, 1.9, -12.2], target: [-3.0, 1.2, -16.9], fov: 45 },
+    monitor: { pos: [-2.6, 2.2, -15.4], target: [-1.1, 1.55, -17.5], fov: 40 },
     atmo: { pos: [-6.5, 1.3, 3.5], target: [1, 4.2, -16] },
     dancefloor: { pos: [0.6, 1.7, -7.5], target: [0, 1.9, -17] },
   },
