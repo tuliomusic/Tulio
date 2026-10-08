@@ -427,6 +427,9 @@
 .nc-dither-img {
   filter: grayscale(1) contrast(1.15) brightness(0.55) sepia(1) hue-rotate(95deg) saturate(2.2);
 }
+.marquee-track .nc-dither-img {
+  filter: grayscale(1) contrast(1.15) brightness(0.55) sepia(1) hue-rotate(190deg) saturate(2.2);
+}
 .nc-code-chip {
   display: inline-block;
   border: 1px solid var(--nc-border);

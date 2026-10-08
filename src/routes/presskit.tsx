@@ -145,6 +145,14 @@ function Presskit() {
             <p className="font-mono text-xl uppercase tracking-[.16em] text-primary md:text-2xl">
               {t("technicalRider")}
             </p>
+            {data.settings.booking_email && (
+              <a
+                href={`mailto:${data.settings.booking_email}`}
+                className="mt-3 block font-mono text-[11px] uppercase tracking-[.16em] text-muted-foreground hover:text-foreground"
+              >
+                Bookings · {data.settings.booking_email}
+              </a>
+            )}
             {content ? (
               <ol className="mt-6 space-y-4 text-sm uppercase leading-6 md:text-base">
                 {content.rider.map((options, i) => (

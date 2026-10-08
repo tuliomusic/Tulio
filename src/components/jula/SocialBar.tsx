@@ -10,6 +10,7 @@ export type SocialUrls = {
   spotify_url?: string | null;
   youtube_url?: string | null;
   bandcamp_url?: string | null;
+  booking_email?: string | null;
 };
 
 const order = [
@@ -22,9 +23,19 @@ const order = [
 
 export function SocialBar({ links }: { links: SocialUrls }) {
   const items = order.filter(item => (links[item.key] ?? "").trim().length > 0);
-  if (!items.length) return null;
+  const email = (links.booking_email ?? "").trim();
+  if (!items.length && !email) return null;
   return (
-    <div className="pointer-events-auto flex items-center justify-center gap-7">
+    <div className="pointer-events-auto flex flex-col items-center gap-3">
+      {email && (
+        <a
+          href={`mailto:${email}`}
+          className="max-w-full break-all px-4 text-center font-mono text-[10px] uppercase tracking-[.16em] text-white/70 transition-colors hover:text-white"
+        >
+          Bookings · {email}
+        </a>
+      )}
+      <div className="flex items-center justify-center gap-7">
       {items.map(item => (
         <a
           key={item.key}
@@ -37,6 +48,7 @@ export function SocialBar({ links }: { links: SocialUrls }) {
           <img src={item.icon} alt={item.label} className="size-8 object-contain" loading="lazy" />
         </a>
       ))}
+      </div>
     </div>
   );
 }

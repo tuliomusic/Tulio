@@ -296,7 +296,7 @@ export function MediaGrid({
                 controls
                 playsInline
                 preload="metadata"
-                className="aspect-[4/5] w-full bg-card object-cover"
+                className="aspect-[9/16] w-full bg-card object-cover"
                 aria-label={v.title}
               />
               {downloads && v.downloadable && (

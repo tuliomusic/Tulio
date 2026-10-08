@@ -27,11 +27,12 @@ export const Route = createFileRoute("/")({
       player_enabled: false,
       player_shuffle: false,
       sets_shuffle: false,
-      instagram_url: null,
-      soundcloud_url: null,
+      instagram_url: "https://www.instagram.com/tulio.music/",
+      soundcloud_url: "https://soundcloud.com/tuliomusic",
       spotify_url: null,
       youtube_url: null,
       bandcamp_url: null,
+      booking_email: "soniccdrivebookings@gmail.com",
     };
     const [settingsResult, mediaResult, sectionsResult] = await Promise.allSettled([
       getSiteSettings(),

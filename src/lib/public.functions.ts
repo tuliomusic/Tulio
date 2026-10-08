@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { Database } from "@/integrations/supabase/types";
+import { carouselPhotos, siteParties, sitePhotos, siteVideos } from "@/lib/site-photos";
 
 type Tables = Database["public"]["Tables"];
 
@@ -12,11 +13,12 @@ const tulioSettings = {
   player_enabled: false,
   player_shuffle: false,
   sets_shuffle: false,
-  instagram_url: null,
-  soundcloud_url: null,
+  instagram_url: "https://www.instagram.com/tulio.music/",
+  soundcloud_url: "https://soundcloud.com/tuliomusic",
   spotify_url: null,
   youtube_url: null,
   bandcamp_url: null,
+  booking_email: "soniccdrivebookings@gmail.com",
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
@@ -30,7 +32,21 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
       .limit(1)
       .maybeSingle();
     if (error || !data) return tulioSettings;
-    return { ...tulioSettings, ...data };
+    // The shared settings row still belongs to another artist. Keep Tulio's
+    // public links and booking address on this site.
+    return {
+      ...tulioSettings,
+      ...data,
+      artist_name: tulioSettings.artist_name,
+      release_title: tulioSettings.release_title,
+      release_body: tulioSettings.release_body,
+      instagram_url: tulioSettings.instagram_url,
+      soundcloud_url: tulioSettings.soundcloud_url,
+      spotify_url: tulioSettings.spotify_url,
+      youtube_url: tulioSettings.youtube_url,
+      bandcamp_url: tulioSettings.bandcamp_url,
+      booking_email: tulioSettings.booking_email,
+    };
   } catch {
     return tulioSettings;
   }
@@ -62,21 +78,35 @@ export const getPublicMusic = createServerFn({ method: "GET" }).handler(async ()
     return emptyMusic();
   }
 });
-export const getPublicMedia = createServerFn({ method: "GET" }).handler(
-  async () => [] as Tables["media"]["Row"][],
-);
+export const getPublicMedia = createServerFn({ method: "GET" }).handler(async () => [
+  ...sitePhotos,
+  ...siteVideos,
+]);
 export const getHomepageMedia = createServerFn({ method: "GET" }).handler(async () => {
-  const { publicSupabase } = await import("@/lib/supabase-public.server");
-  const { data, error } = await publicSupabase()
-    .from("media")
-    .select("id, kind, title, public_url, poster_url, alt_text, sort_order")
-    .eq("visible", true)
-    .eq("kind", "image")
-    .not("public_url", "is", null)
-    .order("sort_order", { ascending: true })
-    .limit(24);
-  if (error) throw error;
-  return data ?? [];
+  const photos = carouselPhotos().map((photo) => ({
+    id: photo.id,
+    kind: "image" as const,
+    title: photo.title,
+    public_url: photo.public_url,
+    poster_url: photo.poster_url,
+    alt_text: photo.alt_text,
+    sort_order: photo.homepage_order,
+  }));
+  const frames = siteVideos.map((video) => ({
+    id: `${video.id}-frame`,
+    kind: "image" as const,
+    title: video.title,
+    public_url: video.poster_url,
+    poster_url: null,
+    alt_text: video.alt_text,
+    sort_order: video.sort_order,
+  }));
+  const mixed = [];
+  for (let i = 0; mixed.length < 14 && (i < photos.length || i < frames.length); i++) {
+    if (i < photos.length) mixed.push(photos[i]);
+    if (mixed.length < 14 && i < frames.length) mixed.push(frames[i]);
+  }
+  return mixed.map((item, index) => ({ ...item, sort_order: index }));
 });
 export const getReleaseSections = createServerFn({ method: "GET" }).handler(async () => [
   {
@@ -86,9 +116,7 @@ export const getReleaseSections = createServerFn({ method: "GET" }).handler(asyn
     sort_order: 0,
   },
 ]);
-export const getParties = createServerFn({ method: "GET" }).handler(
-  async () => [] as Pick<Tables["parties"]["Row"], "id" | "name" | "happened_at" | "sort_order">[],
-);
+export const getParties = createServerFn({ method: "GET" }).handler(async () => siteParties);
 export const getPublicLiveSets = createServerFn({ method: "GET" }).handler(
   async () =>
     [] as Pick<
