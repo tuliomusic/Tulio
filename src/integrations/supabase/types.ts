@@ -485,6 +485,7 @@ export type Database = {
           section1_image_url: string | null;
           section1_right_image_url: string | null;
           singleton_key: string;
+          social_order: string[] | null;
           soundcloud_url: string | null;
           spotify_url: string | null;
           tiktok_url: string | null;
@@ -505,6 +506,7 @@ export type Database = {
           section1_image_url?: string | null;
           section1_right_image_url?: string | null;
           singleton_key?: string;
+          social_order?: string[] | null;
           soundcloud_url?: string | null;
           spotify_url?: string | null;
           tiktok_url?: string | null;
@@ -525,6 +527,7 @@ export type Database = {
           section1_image_url?: string | null;
           section1_right_image_url?: string | null;
           singleton_key?: string;
+          social_order?: string[] | null;
           soundcloud_url?: string | null;
           spotify_url?: string | null;
           tiktok_url?: string | null;

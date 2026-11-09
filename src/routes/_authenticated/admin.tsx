@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LoaderCircle, LogOut, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, LoaderCircle, LogOut, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,13 @@ import { MediaLibrary } from "@/components/jula/admin/MediaLibrary";
 import { ReleaseEditor } from "@/components/jula/admin/ReleaseEditor";
 import { TrackEditor } from "@/components/jula/admin/TrackEditor";
 import { siteParties } from "@/lib/site-photos";
+import { linkParties, type GalleryParty } from "@/lib/gallery-groups";
+import {
+  moveSocialKey,
+  normalizeSocialOrder,
+  SOCIAL_PLATFORMS,
+  type SocialKey,
+} from "@/lib/social-order";
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
@@ -42,20 +49,9 @@ export const Route = createFileRoute("/_authenticated/admin")({
   }),
   component: Admin,
 });
-function mediaParties(items: { party_id?: string | null }[]) {
-  const list = siteParties.map((party) => ({
-    id: party.id,
-    name: party.name,
-    happened_at: party.happened_at,
-  }));
-  const known = new Set(list.map((party) => party.id));
-  for (const item of items) {
-    if (item.party_id && !known.has(item.party_id)) {
-      known.add(item.party_id);
-      list.push({ id: item.party_id, name: item.party_id, happened_at: "" });
-    }
-  }
-  return list;
+/** Built-in gallery parties plus the ones saved in the panel. */
+function tulioParties(saved: GalleryParty[]): GalleryParty[] {
+  return [...siteParties.map(({ id, name, happened_at }) => ({ id, name, happened_at })), ...saved];
 }
 
 function Admin() {
@@ -90,6 +86,7 @@ function Admin() {
     instagram_url: "",
     spotify_url: "",
     beatport_url: "",
+    social_order: normalizeSocialOrder(null),
   };
   const [home, setHome] = useState(emptyHome);
   const [homeUploading, setHomeUploading] = useState(false);
@@ -130,12 +127,16 @@ function Admin() {
         instagram_url: row.instagram_url ?? "",
         spotify_url: row.spotify_url ?? "",
         beatport_url: row.beatport_url ?? "",
+        social_order: normalizeSocialOrder(row.social_order),
       });
       setHeroTitle(row.hero_title?.trim() || "Trajetória");
       setHeroBody(row.hero_body ?? "");
       setHeroImage(row.hero_image_url || "/brand/tulio-n26.jpg");
     }
   }, [data]);
+  function moveIcon(key: SocialKey, delta: -1 | 1) {
+    setHome((v) => ({ ...v, social_order: moveSocialKey(v.social_order, key, delta) }));
+  }
   async function refresh() {
     await query.invalidateQueries({ queryKey: ["admin-content"] });
   }
@@ -218,6 +219,9 @@ function Admin() {
     );
   if (error || !data)
     return <main className="grid min-h-screen place-items-center">Acesso indisponível.</main>;
+  const { parties: linkedParties, partyIdOf } = linkParties(tulioParties(data.parties), data.media);
+  const savedIds = new Set(data.parties.map((p) => p.id));
+  const savedParties = linkedParties.filter((p) => savedIds.has(p.id));
   return (
     <main className="min-h-screen px-5 py-8 md:px-10">
       <header className="flex items-center justify-between border-b border-border pb-6">
@@ -387,7 +391,7 @@ function Admin() {
           <MediaLibrary
             library="tulio"
             media={data.media}
-            parties={mediaParties(data.media)}
+            parties={tulioParties(data.parties)}
             onChanged={refresh}
           />
         </TabsContent>
@@ -454,32 +458,41 @@ function Admin() {
                 onChange={(e) => setHome((v) => ({ ...v, booking_email: e.target.value }))}
               />
             </label>
-            <div className="mt-6 space-y-3">
-              {(
-                [
-                  ["facebook_url", "Facebook"],
-                  ["x_url", "X"],
-                  ["tiktok_url", "TikTok"],
-                  ["youtube_url", "YouTube"],
-                  ["soundcloud_url", "SoundCloud"],
-                  ["bandcamp_url", "Bandcamp"],
-                  ["instagram_url", "Instagram"],
-                  ["spotify_url", "Spotify"],
-                  ["beatport_url", "Beatport"],
-                ] as const
-              ).map(([key, label]) => (
-                <label
-                  key={key}
-                  className="block text-xs uppercase tracking-[.15em] text-muted-foreground"
-                >
-                  {label}
-                  <Input
-                    className="mt-1"
-                    placeholder="https://"
-                    value={home[key]}
-                    onChange={(e) => setHome((v) => ({ ...v, [key]: e.target.value }))}
-                  />
-                </label>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Ícones: só aparecem os que têm link. A ordem da lista é a do site — o primeiro de cima
+              fica à esquerda.
+            </p>
+            <div className="mt-3 space-y-3">
+              {home.social_order.map((key, index) => (
+                <div key={key} className="flex items-end gap-2">
+                  <label className="block flex-1 text-xs uppercase tracking-[.15em] text-muted-foreground">
+                    {SOCIAL_PLATFORMS.find((p) => p.key === key)!.label}
+                    <Input
+                      className="mt-1"
+                      placeholder="https://"
+                      value={home[key]}
+                      onChange={(e) => setHome((v) => ({ ...v, [key]: e.target.value }))}
+                    />
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={index === 0}
+                    onClick={() => moveIcon(key, -1)}
+                    aria-label="Subir"
+                  >
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={index === home.social_order.length - 1}
+                    onClick={() => moveIcon(key, 1)}
+                    aria-label="Descer"
+                  >
+                    <ArrowDown />
+                  </Button>
+                </div>
               ))}
             </div>
             <Button
@@ -487,9 +500,11 @@ function Admin() {
               disabled={homeUploading}
               onClick={async () => {
                 try {
-                  await saveHome({ data: home });
+                  const result = await saveHome({ data: home });
                   await refresh();
-                  toast.success("Sessão 1 atualizada.");
+                  if (result.orderSaved) toast.success("Sessão 1 atualizada.");
+                  else
+                    toast.warning("Links salvos, mas a ordem dos ícones ainda não pôde ser salva.");
                 } catch {
                   toast.error("Verifique a foto, o texto e os links (use https://).");
                 }
@@ -524,12 +539,12 @@ function Admin() {
             </Panel>
             <section className="mt-7">
               <h2 className="mb-6 text-2xl uppercase">Festas cadastradas</h2>
-              {data.parties.length === 0 ? (
+              {savedParties.length === 0 ? (
                 <p className="border-y border-border py-10 text-sm text-muted-foreground">
                   Nenhuma festa cadastrada.
                 </p>
               ) : (
-                data.parties.map((p: any) => (
+                savedParties.map((p) => (
                   <div
                     key={p.id}
                     className="flex items-center justify-between border-t border-border py-4"
@@ -538,7 +553,7 @@ function Admin() {
                       <p className="font-medium uppercase">{p.name}</p>
                       <p className="mt-1 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">
                         {p.happened_at ?? "Sem data"} ·{" "}
-                        {data.media.filter((m: any) => m.party_id === p.id).length} fotos
+                        {data.media.filter((m) => partyIdOf(m.party_id) === p.id).length} fotos
                       </p>
                     </div>
                     <Button

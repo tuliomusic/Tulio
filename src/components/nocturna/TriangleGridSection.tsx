@@ -35,7 +35,7 @@ export function TriangleGridSection({
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-6 md:bottom-8">
         <div className="pointer-events-auto w-full max-w-3xl">
-          <SocialBar links={links} all />
+          <SocialBar links={links} spread />
         </div>
       </div>
     </section>
