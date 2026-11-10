@@ -44,12 +44,14 @@ export const tulioHomeDefaults = {
   instagram_url: "https://www.instagram.com/tulio.music/",
   spotify_url: null as string | null,
   beatport_url: null as string | null,
+  social_order: null as string[] | null,
 };
 
 export const getTulioHome = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { publicSupabase } = await import("@/lib/supabase-public.server");
-    const { data, error } = await publicSupabase()
+    const db = publicSupabase();
+    const { data, error } = await db
       .from("tulio_home")
       .select(
         "section1_image_url, section1_image_alt, section1_right_image_url, hero_title, hero_body, hero_image_url, booking_email, facebook_url, x_url, tiktok_url, youtube_url, soundcloud_url, bandcamp_url, instagram_url, spotify_url, beatport_url",
@@ -57,9 +59,16 @@ export const getTulioHome = createServerFn({ method: "GET" }).handler(async () =
       .eq("singleton_key", "main")
       .maybeSingle();
     if (error || !data) return tulioHomeDefaults;
+    // Separate query so a missing column (before 0017 is applied) never breaks the home.
+    const order = await db
+      .from("tulio_home")
+      .select("social_order")
+      .eq("singleton_key", "main")
+      .maybeSingle();
     return {
       ...tulioHomeDefaults,
       ...data,
+      social_order: order.error ? null : (order.data?.social_order ?? null),
       section1_image_url: data.section1_image_url || tulioHomeDefaults.section1_image_url,
       section1_image_alt: data.section1_image_alt || tulioHomeDefaults.section1_image_alt,
       section1_right_image_url: data.section1_right_image_url || tulioHomeDefaults.section1_right_image_url,
@@ -246,7 +255,21 @@ export const getReleaseSections = createServerFn({ method: "GET" }).handler(asyn
     sort_order: 0,
   },
 ]);
-export const getParties = createServerFn({ method: "GET" }).handler(async () => siteParties);
+/** The gallery's built-in parties plus the ones created in the panel. */
+export const getParties = createServerFn({ method: "GET" }).handler(async () => {
+  const builtIn = siteParties.map(({ id, name, happened_at }) => ({ id, name, happened_at }));
+  try {
+    const { publicSupabase } = await import("@/lib/supabase-public.server");
+    const { data, error } = await publicSupabase()
+      .from("parties")
+      .select("id, name, happened_at")
+      .order("happened_at", { ascending: false, nullsFirst: false });
+    if (error || !data) return builtIn;
+    return [...builtIn, ...data];
+  } catch {
+    return builtIn;
+  }
+});
 export const getPublicLiveSets = createServerFn({ method: "GET" }).handler(
   async () =>
     [] as Pick<

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteAdminItem, saveAdminItem } from "@/lib/admin.functions";
+import { isSavedPartyId, linkParties } from "@/lib/gallery-groups";
 import { transcodeSiteMediaVideo } from "@/lib/media-video.functions";
 import { uploadSiteMediaFile } from "@/lib/storage-upload";
 import {
@@ -67,6 +68,7 @@ export function MediaLibrary({
 }) {
   const table = library === "tulio" ? "tulio_media" : "media";
   const placeLabel = library === "tulio" ? "Carrossel" : "Sessão 1";
+  const { parties: partyList, partyIdOf } = linkParties(parties, media);
   const save = useServerFn(saveAdminItem);
   const remove = useServerFn(deleteAdminItem);
   const transcodeOnServer = useServerFn(transcodeSiteMediaVideo);
@@ -128,9 +130,8 @@ export function MediaLibrary({
     setBusy(true);
     try {
       let linkedParty = partyId;
-      if (library === "tulio") {
-        linkedParty = partyId || partyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      } else if (partyName) {
+      const current = partyList.find((party) => party.id === partyId);
+      if (partyName) {
         const created = (await save({
           data: {
             table: "parties",
@@ -139,8 +140,8 @@ export function MediaLibrary({
         })) as Party;
         linkedParty = created.id;
       } else if (date) {
-        const current = parties.find((party) => party.id === partyId);
-        if (current) {
+        // Built-in gallery parties (slug ids) are not rows in `parties`.
+        if (current && isSavedPartyId(current.id)) {
           await save({
             data: {
               table: "parties",
@@ -209,7 +210,7 @@ export function MediaLibrary({
               presskit_enabled: presskit,
               downloadable: presskit || gallery,
               party_id: linkedParty || null,
-              captured_at: date || null,
+              captured_at: date || current?.happened_at || null,
             },
           },
         });
@@ -327,12 +328,12 @@ export function MediaLibrary({
               <label className="mt-3 block text-xs text-muted-foreground">
                 Festa
                 <select
-                  value={item.party_id ?? ""}
+                  value={partyIdOf(item.party_id) ?? ""}
                   onChange={(e) => void patch(item, { party_id: e.target.value || null })}
                   className="mt-1 w-full border border-border bg-background px-2 py-1 text-xs text-foreground"
                 >
                   <option value="">Sem festa</option>
-                  {parties.map((party) => (
+                  {partyList.map((party) => (
                     <option key={party.id} value={party.id}>
                       {party.name}
                     </option>
@@ -384,7 +385,7 @@ export function MediaLibrary({
                 className="mt-1 w-full border border-border bg-background px-2 py-2 text-sm text-foreground"
               >
                 <option value="">Nova festa</option>
-                {parties.map((party) => (
+                {partyList.map((party) => (
                   <option key={party.id} value={party.id}>
                     {party.name}
                   </option>

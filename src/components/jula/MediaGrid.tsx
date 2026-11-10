@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CornerButton } from "@/components/nocturna/CornerButton";
 import { PhotoLightbox } from "@/components/jula/PhotoLightbox";
 import { GlyphHover, TITLE_STEP_MS } from "@/components/tulio/GlyphHover";
+import { groupPhotosByParty, OTHER_PARTY_ID, type GalleryParty } from "@/lib/gallery-groups";
 import { useI18n, type Locale } from "@/lib/i18n";
 import { downloadMedia, downloadMediaZip, type ZipProgress } from "@/lib/media-download";
 import { cn } from "@/lib/utils";
@@ -20,8 +21,9 @@ type MediaItem = {
   downloadable: boolean;
   presskit_enabled: boolean;
   party_id?: string | null;
+  captured_at?: string | null;
 };
-type Party = { id: string; name: string; happened_at: string | null };
+type Party = GalleryParty;
 
 const ZIP_NAME = "jula-presskit.zip";
 
@@ -108,15 +110,7 @@ export function MediaGrid({
 
   const photos = items.filter((x) => x.kind === "image" && x.public_url);
   const videos = items.filter((x) => x.kind === "video" && x.public_url);
-  const groups = parties
-    .map((party) => ({ party, photos: photos.filter((p) => p.party_id === party.id) }))
-    .filter((group) => group.photos.length > 0);
-  const loose = photos.filter((p) => !groups.some((g) => g.photos.includes(p)));
-  if (loose.length > 0)
-    groups.push({
-      party: { id: "__other", name: t("otherPhotos"), happened_at: null },
-      photos: loose,
-    });
+  const groups = groupPhotosByParty(parties, photos, t("otherPhotos"));
 
   // Only photos flagged as downloadable can be downloaded or selected.
   const downloadablePhotos = downloads ? photos.filter((p) => p.downloadable) : [];
@@ -222,7 +216,7 @@ export function MediaGrid({
           />
           <span className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-background/90 via-background/10 to-transparent p-4 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
             <span className="translate-y-3 font-mono text-[10px] uppercase tracking-[.18em] transition-transform duration-500 group-hover:translate-y-0">
-              {party.id === "__other" ? item.title : party.name}
+              {party.id === OTHER_PARTY_ID ? item.title : party.name}
             </span>
             {party.happened_at && (
               <span className="mt-1 translate-y-3 font-mono text-[9px] uppercase tracking-[.16em] text-muted-foreground transition-transform duration-500 group-hover:translate-y-0">

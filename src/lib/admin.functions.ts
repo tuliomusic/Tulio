@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { DEFAULT_SOCIAL_ORDER, normalizeSocialOrder, type SocialKey } from "@/lib/social-order";
 
 const tables = z.enum([
   "sets",
@@ -180,13 +181,17 @@ export const saveTulioHome = createServerFn({ method: "POST" })
         hero_title: z.string().trim().max(120).optional(),
         hero_body: z.string().max(10000).optional(),
         hero_image_url: homeImage.optional(),
+        social_order: z
+          .array(z.enum(DEFAULT_SOCIAL_ORDER as [SocialKey, ...SocialKey[]]))
+          .optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { social_order, ...fields } = data;
     const clean = Object.fromEntries(
-      Object.entries(data)
+      Object.entries(fields)
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => [key, value === "" ? null : value]),
     );
@@ -195,7 +200,16 @@ export const saveTulioHome = createServerFn({ method: "POST" })
       .update({ ...clean, updated_at: new Date().toISOString() })
       .eq("singleton_key", "main");
     if (error) throw error;
-    return { ok: true };
+    // Separate update so links still save while the social_order column (0017) is missing.
+    let orderSaved = true;
+    if (social_order) {
+      const order = await context.supabase
+        .from("tulio_home")
+        .update({ social_order: normalizeSocialOrder(social_order) })
+        .eq("singleton_key", "main");
+      orderSaved = !order.error;
+    }
+    return { ok: true, orderSaved };
   });
 export const saveAdminItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
