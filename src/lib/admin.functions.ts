@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isSavedPartyId } from "@/lib/gallery-groups";
 import { DEFAULT_SOCIAL_ORDER, normalizeSocialOrder, type SocialKey } from "@/lib/social-order";
 
 const tables = z.enum([
@@ -314,6 +315,24 @@ export const deleteAdminItem = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { error } = await context.supabase.from(data.table).delete().eq("id", data.id);
     if (error) throw error;
+    return { ok: true };
+  });
+
+/** Drop a gallery group: unlink tulio_media from the party, then delete the row in parties when it is a saved festa. */
+export const dissolvePartyGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ party_id: z.string().trim().min(1).max(120) }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error: mediaError } = await context.supabase
+      .from("tulio_media")
+      .update({ party_id: null })
+      .eq("party_id", data.party_id);
+    if (mediaError) throw mediaError;
+    if (isSavedPartyId(data.party_id)) {
+      const { error } = await context.supabase.from("parties").delete().eq("id", data.party_id);
+      if (error) throw error;
+    }
     return { ok: true };
   });
 

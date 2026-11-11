@@ -11,3 +11,10 @@ test("steps eyebrow is Jornada (regression vs Fluxo)", () => {
 test("English steps eyebrow is Journey", () => {
   assert.equal(getNocturnaHomeCopy("en").stepsEyebrow, "Journey");
 });
+
+test("steps section title runs from booking to the booth", () => {
+  const pt = getNocturnaHomeCopy("pt");
+  assert.equal(pt.stepsTitle, "Do booking a cabine.");
+  assert.notEqual(pt.stepsTitle, "Da cabine ao booking.");
+  assert.equal(getNocturnaHomeCopy("en").stepsTitle, "From booking to booth.");
+});

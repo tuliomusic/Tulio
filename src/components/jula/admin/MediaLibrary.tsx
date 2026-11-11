@@ -49,10 +49,15 @@ const MAX_IMAGE = 15 * 1024 * 1024;
 const MAX_VIDEO = 2 * 1024 * 1024 * 1024;
 
 function errorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "object" && error && "message" in error)
-    return String((error as { message: unknown }).message);
-  return "Erro desconhecido";
+  let raw = "";
+  if (error instanceof Error) raw = error.message;
+  else if (typeof error === "object" && error && "message" in error)
+    raw = String((error as { message: unknown }).message);
+  else raw = "Erro desconhecido";
+  if (raw.includes("413") || /maximum size exceeded/i.test(raw)) {
+    return `${raw} — o bucket site-media no Supabase ainda está com limite baixo (ex. 100 MB). Rode a migração 0018 (2 GB) no projeto anvcefodxeywcpjwbojr, ou envie arquivos menores (fotos até 15 MB).`;
+  }
+  return raw;
 }
 
 export function MediaLibrary({
