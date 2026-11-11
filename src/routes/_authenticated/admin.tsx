@@ -659,10 +659,6 @@ function Admin() {
                   <h3 className="mb-4 mt-10 text-sm uppercase tracking-[.14em] text-muted-foreground">
                     Grupos do acervo (ex.: Tulio Syncro)
                   </h3>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Vindos do arquivo fixo do site. Remover só desvincula as mídias — o nome some da
-                    galeria quando não houver mais fotos no grupo.
-                  </p>
                   {builtinParties.map((p) => (
                     <div
                       key={p.id}
