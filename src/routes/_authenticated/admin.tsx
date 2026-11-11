@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, LoaderCircle, LogOut, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, LoaderCircle, LogOut, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   deleteAdminItem,
+  dissolvePartyGroup,
   getAdminData,
   saveAdminItem,
   saveSettings,
@@ -28,7 +29,7 @@ import { MediaLibrary } from "@/components/jula/admin/MediaLibrary";
 import { ReleaseEditor } from "@/components/jula/admin/ReleaseEditor";
 import { TrackEditor } from "@/components/jula/admin/TrackEditor";
 import { siteParties } from "@/lib/site-photos";
-import { linkParties, type GalleryParty } from "@/lib/gallery-groups";
+import { isSavedPartyId, linkParties, type GalleryParty } from "@/lib/gallery-groups";
 import {
   moveSocialKey,
   normalizeSocialOrder,
@@ -72,6 +73,9 @@ function Admin() {
   const [playerShuffle, setPlayerShuffle] = useState(false);
   const [setsShuffle, setSetsShuffle] = useState(false);
   const [party, setParty] = useState({ name: "", happened_at: "" });
+  const [editingPartyId, setEditingPartyId] = useState<string | null>(null);
+  const [partyEdit, setPartyEdit] = useState({ name: "", happened_at: "" });
+  const dissolveParty = useServerFn(dissolvePartyGroup);
   const emptyHome = {
     section1_image_url: "/brand/tulio-session.jpg",
     section1_right_image_url: "/brand/tulio-booth.jpg",
@@ -155,10 +159,52 @@ function Admin() {
       toast.error("Não foi possível salvar.");
     }
   }
-  async function delParty(id: string) {
-    await remove({ data: { table: "parties", id } });
-    await refresh();
-    toast.success("Festa removida.");
+  function startEditParty(p: GalleryParty) {
+    setEditingPartyId(p.id);
+    setPartyEdit({ name: p.name, happened_at: p.happened_at ?? "" });
+  }
+  async function savePartyEdit(partyId: string) {
+    const name = partyEdit.name.trim();
+    if (!name) {
+      toast.error("Informe o nome da festa.");
+      return;
+    }
+    try {
+      await save({
+        data: {
+          table: "parties",
+          item: {
+            id: partyId,
+            name,
+            happened_at: partyEdit.happened_at || null,
+            sort_order: 0,
+          },
+        },
+      });
+      setEditingPartyId(null);
+      await refresh();
+      toast.success("Festa atualizada.");
+    } catch {
+      toast.error("Não foi possível salvar.");
+    }
+  }
+  async function removePartyGroup(
+    p: GalleryParty,
+    countForParty: (partyId: string) => number,
+  ) {
+    const count = countForParty(p.id);
+    const label = count
+      ? `Remover a festa “${p.name}”? ${count} mídia(s) ficam sem festa (podem ir para Outros registros na galeria).`
+      : `Remover a festa “${p.name}”?`;
+    if (!window.confirm(label)) return;
+    try {
+      await dissolveParty({ data: { party_id: p.id } });
+      setEditingPartyId(null);
+      await refresh();
+      toast.success("Festa removida.");
+    } catch {
+      toast.error("Não foi possível remover.");
+    }
   }
   async function setMediaParty(item: any, value: string) {
     await save({ data: { table: "media", item: { ...item, party_id: value || null } } });
@@ -220,8 +266,13 @@ function Admin() {
   if (error || !data)
     return <main className="grid min-h-screen place-items-center">Acesso indisponível.</main>;
   const { parties: linkedParties, partyIdOf } = linkParties(tulioParties(data.parties), data.media);
+  const photoCount = (partyId: string) =>
+    data.media.filter((m) => partyIdOf(m.party_id) === partyId).length;
   const savedIds = new Set(data.parties.map((p) => p.id));
   const savedParties = linkedParties.filter((p) => savedIds.has(p.id));
+  const builtinParties = linkedParties.filter(
+    (p) => !savedIds.has(p.id) && photoCount(p.id) > 0,
+  );
   return (
     <main className="min-h-screen px-5 py-8 md:px-10">
       <header className="flex items-center justify-between border-b border-border pb-6">
@@ -547,25 +598,93 @@ function Admin() {
                 savedParties.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between border-t border-border py-4"
+                    className="flex flex-wrap items-center justify-between gap-3 border-t border-border py-4"
                   >
-                    <div>
-                      <p className="font-medium uppercase">{p.name}</p>
-                      <p className="mt-1 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">
-                        {p.happened_at ?? "Sem data"} ·{" "}
-                        {data.media.filter((m) => partyIdOf(m.party_id) === p.id).length} fotos
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => delParty(p.id)}
-                      aria-label={`Excluir ${p.name}`}
-                    >
-                      <Trash2 />
-                    </Button>
+                    {editingPartyId === p.id && isSavedPartyId(p.id) ? (
+                      <div className="flex w-full flex-wrap items-end gap-2 sm:flex-nowrap">
+                        <Input
+                          className="min-w-[12rem] flex-1"
+                          value={partyEdit.name}
+                          onChange={(e) => setPartyEdit((v) => ({ ...v, name: e.target.value }))}
+                          placeholder="Nome da festa"
+                        />
+                        <Input
+                          className="w-40"
+                          type="date"
+                          value={partyEdit.happened_at}
+                          onChange={(e) =>
+                            setPartyEdit((v) => ({ ...v, happened_at: e.target.value }))
+                          }
+                        />
+                        <Button onClick={() => void savePartyEdit(p.id)}>
+                          <Save /> Salvar
+                        </Button>
+                        <Button variant="ghost" onClick={() => setEditingPartyId(null)}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="font-medium uppercase">{p.name}</p>
+                          <p className="mt-1 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">
+                            {p.happened_at ?? "Sem data"} · {photoCount(p.id)} fotos
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEditParty(p)}
+                            aria-label={`Editar ${p.name}`}
+                          >
+                            <Pencil />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => void removePartyGroup(p, photoCount)}
+                            aria-label={`Excluir ${p.name}`}
+                          >
+                            <Trash2 />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))
+              )}
+              {builtinParties.length > 0 && (
+                <>
+                  <h3 className="mb-4 mt-10 text-sm uppercase tracking-[.14em] text-muted-foreground">
+                    Grupos do acervo (ex.: Tulio Syncro)
+                  </h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Vindos do arquivo fixo do site. Remover só desvincula as mídias — o nome some da
+                    galeria quando não houver mais fotos no grupo.
+                  </p>
+                  {builtinParties.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between border-t border-border py-4"
+                    >
+                      <div>
+                        <p className="font-medium uppercase">{p.name}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">
+                          {p.happened_at ?? "Sem data"} · {photoCount(p.id)} fotos · id {p.id}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void removePartyGroup(p, photoCount)}
+                        aria-label={`Remover grupo ${p.name}`}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ))}
+                </>
               )}
             </section>
           </div>

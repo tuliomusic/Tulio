@@ -35,7 +35,7 @@ const copy = {
     f3body:
       "Galeria por festa e data. Download quando liberado. Presskit com rider para booking.",
     stepsEyebrow: "Jornada",
-    stepsTitle: "Da cabine ao booking.",
+    stepsTitle: "Do booking a cabine.",
     step1n: "01",
     step1t: "Ouça um set",
     step1b: "Entre em Sets, escolha uma sessão e deixe o player rodar — fila, shuffle, capa.",
@@ -108,7 +108,7 @@ const copy = {
     f3title: "From booth to dancefloor",
     f3body: "Gallery by party and date. Downloads when enabled. Presskit and rider for booking.",
     stepsEyebrow: "Journey",
-    stepsTitle: "From booth to booking.",
+    stepsTitle: "From booking to booth.",
     step1n: "01",
     step1t: "Play a set",
     step1b: "Open Sets, pick a session and let the player run — queue, shuffle, artwork.",
