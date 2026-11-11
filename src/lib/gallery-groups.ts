@@ -84,6 +84,15 @@ export function linkParties<P extends PartyPhoto>(parties: GalleryParty[], photo
   return { parties: dated, partyIdOf };
 }
 
+/** Festas tab: saved rows plus slug groups that still have photos (one list, newest first). */
+export function partiesListedInAdmin(
+  linked: GalleryParty[],
+  savedIds: ReadonlySet<string>,
+  photoCount: (partyId: string) => number,
+) {
+  return linked.filter((p) => savedIds.has(p.id) || photoCount(p.id) > 0);
+}
+
 /** Gallery sections: one per party (newest first), then the photos with no party. */
 export function groupPhotosByParty<P extends PartyPhoto>(
   parties: GalleryParty[],

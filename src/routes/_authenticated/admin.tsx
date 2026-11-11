@@ -29,7 +29,12 @@ import { MediaLibrary } from "@/components/jula/admin/MediaLibrary";
 import { ReleaseEditor } from "@/components/jula/admin/ReleaseEditor";
 import { TrackEditor } from "@/components/jula/admin/TrackEditor";
 import { siteParties } from "@/lib/site-photos";
-import { isSavedPartyId, linkParties, type GalleryParty } from "@/lib/gallery-groups";
+import {
+  isSavedPartyId,
+  linkParties,
+  partiesListedInAdmin,
+  type GalleryParty,
+} from "@/lib/gallery-groups";
 import {
   moveSocialKey,
   normalizeSocialOrder,
@@ -269,10 +274,7 @@ function Admin() {
   const photoCount = (partyId: string) =>
     data.media.filter((m) => partyIdOf(m.party_id) === partyId).length;
   const savedIds = new Set(data.parties.map((p) => p.id));
-  const savedParties = linkedParties.filter((p) => savedIds.has(p.id));
-  const builtinParties = linkedParties.filter(
-    (p) => !savedIds.has(p.id) && photoCount(p.id) > 0,
-  );
+  const listedParties = partiesListedInAdmin(linkedParties, savedIds, photoCount);
   return (
     <main className="min-h-screen px-5 py-8 md:px-10">
       <header className="flex items-center justify-between border-b border-border pb-6">
@@ -590,12 +592,12 @@ function Admin() {
             </Panel>
             <section className="mt-7">
               <h2 className="mb-6 text-2xl uppercase">Festas cadastradas</h2>
-              {savedParties.length === 0 ? (
+              {listedParties.length === 0 ? (
                 <p className="border-y border-border py-10 text-sm text-muted-foreground">
                   Nenhuma festa cadastrada.
                 </p>
               ) : (
-                savedParties.map((p) => (
+                listedParties.map((p) => (
                   <div
                     key={p.id}
                     className="flex flex-wrap items-center justify-between gap-3 border-t border-border py-4"
@@ -632,14 +634,16 @@ function Admin() {
                           </p>
                         </div>
                         <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => startEditParty(p)}
-                            aria-label={`Editar ${p.name}`}
-                          >
-                            <Pencil />
-                          </Button>
+                          {isSavedPartyId(p.id) ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => startEditParty(p)}
+                              aria-label={`Editar ${p.name}`}
+                            >
+                              <Pencil />
+                            </Button>
+                          ) : null}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -653,34 +657,6 @@ function Admin() {
                     )}
                   </div>
                 ))
-              )}
-              {builtinParties.length > 0 && (
-                <>
-                  <h3 className="mb-4 mt-10 text-sm uppercase tracking-[.14em] text-muted-foreground">
-                    Grupos do acervo (ex.: Tulio Syncro)
-                  </h3>
-                  {builtinParties.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between border-t border-border py-4"
-                    >
-                      <div>
-                        <p className="font-medium uppercase">{p.name}</p>
-                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground">
-                          {p.happened_at ?? "Sem data"} · {photoCount(p.id)} fotos · id {p.id}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => void removePartyGroup(p, photoCount)}
-                        aria-label={`Remover grupo ${p.name}`}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  ))}
-                </>
               )}
             </section>
           </div>

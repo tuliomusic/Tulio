@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { groupPhotosByParty, isSavedPartyId, linkParties, partySlug } from "./gallery-groups.ts";
+import {
+  groupPhotosByParty,
+  isSavedPartyId,
+  linkParties,
+  partiesListedInAdmin,
+  partySlug,
+} from "./gallery-groups.ts";
 
 const src = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path: string) => readFileSync(join(src, path), "utf8");
@@ -100,6 +106,24 @@ test("slugs drop accents; only uuid ids are saved parties", () => {
   assert.equal(partySlug("Pista Sinkrö"), "pista-sinkro");
   assert.equal(isSavedPartyId(saved.id), true);
   assert.equal(isSavedPartyId("syncro"), false);
+});
+
+test("admin Festas lists saved parties and slug groups with photos together", () => {
+  const { parties: linked } = linkParties(
+    [saved],
+    [
+      { party_id: saved.id, captured_at: "2025-01-01" },
+      { party_id: "syncro", captured_at: "2024-01-01" },
+    ],
+  );
+  const savedIds = new Set([saved.id]);
+  const count = (id: string) => (id === saved.id ? 1 : id === "syncro" ? 2 : 0);
+  const listed = partiesListedInAdmin(linked, savedIds, count);
+  assert.equal(listed.length, 2);
+  assert.equal(listed.some((p) => p.id === "syncro"), true);
+  const admin = read("routes/_authenticated/admin.tsx");
+  assert.doesNotMatch(admin, /Grupos do acervo/);
+  assert.doesNotMatch(admin, /id \{p\.id\}/);
 });
 
 test("the Tulio panel saves a new party instead of only slugging the name", () => {
