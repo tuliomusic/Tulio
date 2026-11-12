@@ -1,19 +1,14 @@
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
+import {
+  GLYPH_STEP_MS,
+  glyphFrame,
+  glyphHoverCells,
+  splitGraphemes,
+  TITLE_STEP_MS,
+} from "@/components/tulio/glyph-hover";
 
-const GLYPHS = ["7", "▲"] as const;
-/** Menu pace. Titles use a shorter step so a long heading locks in sooner. */
-export const GLYPH_STEP_MS = 64;
-export const TITLE_STEP_MS = 28;
-
-export function glyphFrame(text: string, step: number) {
-  return [...text]
-    .map((ch, i) => {
-      if (ch === " ") return " ";
-      if (step > 0 && i < step) return ch;
-      return GLYPHS[(step + i) % 2];
-    })
-    .join("");
-}
+export { GLYPH_STEP_MS, glyphFrame, TITLE_STEP_MS } from "@/components/tulio/glyph-hover";
 
 export function useGlyphHover(text: string, stepMs = GLYPH_STEP_MS) {
   const [shown, setShown] = useState(text);
@@ -33,7 +28,7 @@ export function useGlyphHover(text: string, stepMs = GLYPH_STEP_MS) {
   const play = () => {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
-    const length = [...text].length;
+    const length = splitGraphemes(text).length;
     setShown(glyphFrame(text, 0));
     let step = 0;
     const tick = () => {
@@ -58,9 +53,21 @@ export function GlyphHover({
   stepMs?: number;
 }) {
   const { shown, play } = useGlyphHover(text, stepMs);
+  const cells = glyphHoverCells(text, shown);
+
   return (
-    <span className={className} onPointerEnter={(event) => event.pointerType === "mouse" && play()}>
-      {shown}
+    <span
+      className={cn("inline", className)}
+      onPointerEnter={(event) => event.pointerType === "mouse" && play()}
+    >
+      {cells.map((cell, i) => (
+        <span key={i} className="relative inline-grid align-baseline">
+          <span className="invisible col-start-1 row-start-1 whitespace-pre" aria-hidden="true">
+            {cell.reserve}
+          </span>
+          <span className="col-start-1 row-start-1 justify-self-center whitespace-pre">{cell.display}</span>
+        </span>
+      ))}
     </span>
   );
 }
