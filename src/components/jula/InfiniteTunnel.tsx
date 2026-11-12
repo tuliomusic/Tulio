@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isEmbedVideo } from "@/lib/media-external";
 import { signalIntroReady } from "@/lib/intro";
 import { holdPageReveal, onPageLeave } from "@/lib/page-transition";
 
@@ -7,6 +8,9 @@ type TunnelItem = {
   kind: "image" | "video" | "audio";
   public_url: string | null;
   poster_url: string | null;
+  source_type?: string | null;
+  external_provider?: string | null;
+  external_id?: string | null;
 };
 
 export function InfiniteTunnel({ items }: { items: TunnelItem[] }) {
@@ -59,7 +63,7 @@ export function InfiniteTunnel({ items }: { items: TunnelItem[] }) {
         if (loadedImages >= Math.ceil(imageCount * 0.6)) ready();
       };
       const textures = source.slice(0, 18).map((item) => {
-        if (item.kind === "video" && item.public_url) {
+        if (item.kind === "video" && item.public_url && !isEmbedVideo(item)) {
           const video = document.createElement("video");
           video.src = item.public_url;
           video.poster = item.poster_url ?? "";

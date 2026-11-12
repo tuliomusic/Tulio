@@ -9,6 +9,7 @@ import { GlyphHover, TITLE_STEP_MS } from "@/components/tulio/GlyphHover";
 import { groupPhotosByParty, OTHER_PARTY_ID, type GalleryParty } from "@/lib/gallery-groups";
 import { useI18n, type Locale } from "@/lib/i18n";
 import { downloadMedia, downloadMediaZip, type ZipProgress } from "@/lib/media-download";
+import { embedSrc, isEmbedVideo } from "@/lib/media-external";
 import { cn } from "@/lib/utils";
 
 type MediaItem = {
@@ -22,6 +23,10 @@ type MediaItem = {
   presskit_enabled: boolean;
   party_id?: string | null;
   captured_at?: string | null;
+  source_type?: string | null;
+  external_provider?: string | null;
+  external_id?: string | null;
+  embed_url?: string | null;
 };
 type Party = GalleryParty;
 
@@ -49,26 +54,45 @@ function VideoWall({ videos, downloads }: { videos: MediaItem[]; downloads: bool
         </p>
       </header>
       <div className="mt-5 grid gap-3 px-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {videos.map((v) => (
-          <div key={v.id}>
-            <video
-              src={v.public_url ?? ""}
-              poster={v.poster_url ?? undefined}
-              controls
-              playsInline
-              preload="metadata"
-              className="aspect-[9/16] w-full bg-card object-cover"
-              aria-label={v.title}
-            />
-            {downloads && v.downloadable && (
-              <Button asChild variant="outline" className="mt-2 w-full">
-                <a href={v.public_url ?? ""} download>
-                  {t("downloadVideo")}
-                </a>
-              </Button>
-            )}
-          </div>
-        ))}
+        {videos.map((v) => {
+          const iframe = isEmbedVideo(v) ? embedSrc(v) : null;
+          return (
+            <div key={v.id}>
+              {iframe ? (
+                <iframe
+                  src={iframe}
+                  title={v.title}
+                  className="aspect-[9/16] w-full bg-card"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={v.public_url ?? ""}
+                  poster={v.poster_url ?? undefined}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="aspect-[9/16] w-full bg-card object-cover"
+                  aria-label={v.title}
+                />
+              )}
+              {downloads && v.downloadable && v.public_url && !iframe ? (
+                <Button asChild variant="outline" className="mt-2 w-full">
+                  <a href={v.public_url} download>
+                    {t("downloadVideo")}
+                  </a>
+                </Button>
+              ) : v.public_url && iframe ? (
+                <Button asChild variant="outline" className="mt-2 w-full">
+                  <a href={v.public_url} target="_blank" rel="noreferrer">
+                    {t("downloadVideo")}
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

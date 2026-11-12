@@ -158,7 +158,7 @@ export const getPublicMusic = createServerFn({ method: "GET" }).handler(async ()
   }
 });
 const mediaColumns =
-  "id, kind, title, public_url, poster_url, alt_text, downloadable, presskit_enabled, party_id, sort_order, captured_at, homepage_enabled, homepage_order";
+  "id, kind, title, public_url, poster_url, alt_text, downloadable, presskit_enabled, party_id, sort_order, captured_at, homepage_enabled, homepage_order, source_type, external_provider, external_id, embed_url";
 
 function mapTulioMedia(row: {
   id: string;
@@ -174,6 +174,10 @@ function mapTulioMedia(row: {
   captured_at: string | null;
   homepage_enabled: boolean;
   homepage_order: number;
+  source_type?: string | null;
+  external_provider?: string | null;
+  external_id?: string | null;
+  embed_url?: string | null;
 }) {
   return {
     id: row.id,
@@ -189,6 +193,10 @@ function mapTulioMedia(row: {
     captured_at: row.captured_at,
     homepage: row.homepage_enabled,
     homepage_order: row.homepage_order,
+    source_type: row.source_type ?? "storage",
+    external_provider: row.external_provider ?? null,
+    external_id: row.external_id ?? null,
+    embed_url: row.embed_url ?? null,
   };
 }
 

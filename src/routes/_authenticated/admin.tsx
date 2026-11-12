@@ -22,7 +22,8 @@ import {
   setPresskitPassword,
 } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadSiteMediaFile } from "@/lib/storage-upload";
+import { uploadFailureHint } from "@/lib/media-budget";
+import { uploadPreparedSiteFile } from "@/lib/upload-prepared";
 import { LinkSetEditor } from "@/components/jula/admin/LinkSetEditor";
 import { UpcomingDatesAdmin } from "@/components/jula/admin/UpcomingDatesAdmin";
 import { MediaLibrary } from "@/components/jula/admin/MediaLibrary";
@@ -322,12 +323,13 @@ function Admin() {
                   try {
                     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
                     const path = `home/hero-${Date.now()}.${ext}`;
-                    await uploadSiteMediaFile(file, path);
+                    await uploadPreparedSiteFile(file, path);
                     const url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl;
                     setHeroImage(url);
                     toast.success("Foto enviada. Salve para publicar.");
-                  } catch {
-                    toast.error("Não foi possível enviar a foto.");
+                  } catch (error) {
+                    const raw = error instanceof Error ? error.message : "";
+                    toast.error(uploadFailureHint(raw) || "Não foi possível enviar a foto.");
                   } finally {
                     setHeroUploading(false);
                   }
@@ -480,12 +482,13 @@ function Admin() {
                         try {
                           const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
                           const path = `home/section1-${slot}-${Date.now()}.${ext}`;
-                          await uploadSiteMediaFile(file, path);
+                          await uploadPreparedSiteFile(file, path);
                           const url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl;
                           setHome((current) => ({ ...current, [key]: url }));
                           toast.success("Foto enviada. Salve para publicar.");
-                        } catch {
-                          toast.error("Não foi possível enviar a foto.");
+                        } catch (error) {
+                          const raw = error instanceof Error ? error.message : "";
+                          toast.error(uploadFailureHint(raw) || "Não foi possível enviar a foto.");
                         } finally {
                           setHomeUploading(false);
                         }

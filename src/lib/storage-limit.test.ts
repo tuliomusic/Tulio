@@ -12,7 +12,9 @@ test("tus 413 on site-media is documented and the 2 GB bucket migration exists",
   assert.match(sql, /file_size_limit\s*=\s*2147483648/);
   assert.match(sql, /site-media/);
   const library = read("src/components/jula/admin/MediaLibrary.tsx");
-  assert.match(library, /413|maximum size exceeded/i);
+  assert.match(library, /Adicionar por link/);
+  assert.match(library, /uploadFailureHint/);
+  assert.match(read("src/lib/media-budget.ts"), /SUPABASE_UPLOAD_HARD_BYTES/);
 });
 
 test("panel can dissolve and edit saved parties", () => {

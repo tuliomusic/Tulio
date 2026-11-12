@@ -78,6 +78,9 @@ export type Database = {
           captured_at: string | null;
           credit: string | null;
           downloadable: boolean;
+          embed_url: string | null;
+          external_id: string | null;
+          external_provider: string | null;
           homepage_enabled: boolean;
           id: string;
           kind: Database["public"]["Enums"]["media_kind"];
@@ -86,6 +89,7 @@ export type Database = {
           presskit_enabled: boolean;
           public_url: string | null;
           sort_order: number;
+          source_type: string;
           storage_bucket: string;
           storage_path: string;
           title: string;
@@ -98,6 +102,9 @@ export type Database = {
           created_at?: string;
           credit?: string | null;
           downloadable?: boolean;
+          embed_url?: string | null;
+          external_id?: string | null;
+          external_provider?: string | null;
           homepage_enabled?: boolean;
           id?: string;
           kind: Database["public"]["Enums"]["media_kind"];
@@ -106,6 +113,7 @@ export type Database = {
           presskit_enabled?: boolean;
           public_url?: string | null;
           sort_order?: number;
+          source_type?: string;
           storage_bucket?: string;
           storage_path: string;
           title: string;
@@ -118,6 +126,9 @@ export type Database = {
           created_at?: string;
           credit?: string | null;
           downloadable?: boolean;
+          embed_url?: string | null;
+          external_id?: string | null;
+          external_provider?: string | null;
           homepage_enabled?: boolean;
           id?: string;
           kind?: Database["public"]["Enums"]["media_kind"];
@@ -126,6 +137,7 @@ export type Database = {
           presskit_enabled?: boolean;
           public_url?: string | null;
           sort_order?: number;
+          source_type?: string;
           storage_bucket?: string;
           storage_path?: string;
           title?: string;
@@ -414,6 +426,9 @@ export type Database = {
           captured_at: string | null;
           created_at: string;
           downloadable: boolean;
+          embed_url: string | null;
+          external_id: string | null;
+          external_provider: string | null;
           homepage_enabled: boolean;
           homepage_order: number;
           id: string;
@@ -423,6 +438,7 @@ export type Database = {
           presskit_enabled: boolean;
           public_url: string | null;
           sort_order: number;
+          source_type: string;
           storage_bucket: string;
           storage_path: string;
           title: string;
@@ -434,6 +450,9 @@ export type Database = {
           captured_at?: string | null;
           created_at?: string;
           downloadable?: boolean;
+          embed_url?: string | null;
+          external_id?: string | null;
+          external_provider?: string | null;
           homepage_enabled?: boolean;
           homepage_order?: number;
           id?: string;
@@ -443,6 +462,7 @@ export type Database = {
           presskit_enabled?: boolean;
           public_url?: string | null;
           sort_order?: number;
+          source_type?: string;
           storage_bucket?: string;
           storage_path?: string;
           title: string;
@@ -454,6 +474,9 @@ export type Database = {
           captured_at?: string | null;
           created_at?: string;
           downloadable?: boolean;
+          embed_url?: string | null;
+          external_id?: string | null;
+          external_provider?: string | null;
           homepage_enabled?: boolean;
           homepage_order?: number;
           id?: string;
@@ -463,6 +486,7 @@ export type Database = {
           presskit_enabled?: boolean;
           public_url?: string | null;
           sort_order?: number;
+          source_type?: string;
           storage_bucket?: string;
           storage_path?: string;
           title?: string;
